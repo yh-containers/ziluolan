@@ -27,6 +27,7 @@ class ArticleController extends CommonController
             $php_input = $this->request->post();
             $addtime = $this->request->post('addtime',date('Y-m-d H:i:s'));
             $php_input['addtime'] = strtotime($addtime);
+//            var_dump($php_input);exit;
             $result = $model->actionSave($php_input);
             return $this->asJson($result);
         }

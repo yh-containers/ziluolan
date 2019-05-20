@@ -10,6 +10,13 @@
     #goods-img .item i{right: 0px;position: absolute;z-index: 999;font-size: 24px;color: red;cursor: pointer}
     #add-spu-block input{width: 160px;display: inline-block}
     #add-spu-block .fa-close{color: red}
+
+    #sku-add-block .form-group{}
+    #sku-add-block .form-group .control-label{text-align: left}
+    #sku-add-block .form-group .control-label i{cursor: pointer}
+    #sku-add-block .form-group .control-label i.fa-plus{color:#0a73bb ;margin-right: 3px}
+    #sku-add-block .form-group .control-label i.fa-close{color:red}
+    #sku-add-block .form-group .control-label em{float:right}
 </style>
 <?php $this->endBlock();?>
 
@@ -128,25 +135,36 @@
                         </ul>
                         <div class="layui-tab-content">
                             <div class="layui-tab-item layui-show">
-                                <div class="form-group">
-                                    <label for="inputPassword3" class="col-sm-2 control-label">商品价格:</label>
+                                <div class="row">
+                                    <div class="col-sm-4 " id="sku-add-block">
+                                        <div class="form-group input-group input-group-sm">
+                                            <input type="text" class="form-control" placeholder="请输入sku属性名">
+                                            <span class="input-group-btn">
+                                              <button type="button" class="btn btn-info btn-flat" id="sku-add">新增</button>
+                                            </span>
+                                        </div>
 
-                                    <div class="col-sm-8">
-                                        <?php if(empty($goods_sku_data)){?>
-                                            <div class="form-group">
-                                                <input type="number" class="form-control" name="sku_price[]" value="" placeholder="">
-                                            </div>
-                                        <?php }else{?>
-                                            <?php foreach($goods_sku_data as $vo){?>
-                                                <input type="hidden" name="sku_id[]" value="<?=$vo['id']?>"/>
-                                                <div class="form-group">
-                                                    <input type="number" class="form-control" name="sku_price[]" value="<?=$vo['price']?>" placeholder="">
-                                                </div>
-                                            <?php }?>
-                                        <?php }?>
+                                    </div>
+                                    <div class="col-sm-8" id="sku-block">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th width="60">#</th>
+                                                    <th width="250">组合名</th>
+                                                    <th width="80">价格</th>
+                                                    <th width="80">库存</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+
+                                            </tbody>
+                                        </table>
+
                                     </div>
                                 </div>
                             </div>
+
+
                             <div class="layui-tab-item">
                                 <div class="form-group">
                                     <script id="attr" name="attr" type="text/plain"><?=$model['attr']?></script>
@@ -169,8 +187,15 @@
         <!-- /.box-footer -->
     </form>
 </div>
+<div id="add-sku-attr-block" style="display: none">
+    <div class="form-group">
+        <label for="inputPassword3" class="col-sm-3 control-label" style="text-align: right">属性名</label>
 
-
+        <div class="col-sm-8">
+            <input type="text" name="attr_name" maxlength="15" class="form-control" value="" placeholder="">
+        </div>
+    </div>
+</div>
 <?php $this->endBlock(); ?>
 
 <?php $this->beginBlock('script');?>
@@ -182,25 +207,222 @@
     var ue_attr = UE.getEditor('attr');
     //详细资料
     var ue = UE.getEditor('container');
-
-    layui.use(['upload','element'], function(){
-        var upload = layui.upload;
-        var element = layui.element;
-        $.common.uploadFile(upload,'#test1',(res,item)=>{
-            $("#goods-img").append('<div class="item">\n' +
-                '<i class="fa fa-fw fa-close"></i>\n' +
-                '<img src="'+res.path+'" width="120" height="120"/>\n' +
-                '<input type="hidden" name="image[]" value="'+res.path+'"/>'+
-                '</div>')
-        })
-
-    });
     $(function(){
+        layui.use(['layer','upload','element'], function(){
+            var layer = layui.layer;
+            var upload = layui.upload;
+            var element = layui.element;
+            $.common.uploadFile(upload,'#test1',(res,item)=>{
+                $("#goods-img").append('<div class="item">\n' +
+                    '<i class="fa fa-fw fa-close"></i>\n' +
+                    '<img src="'+res.path+'" width="120" height="120"/>\n' +
+                    '<input type="hidden" name="image[]" value="'+res.path+'"/>'+
+                    '</div>')
+            })
 
-        $("#goods-img").on('click','.item i',function(){
-            $(this).parent().remove()
-        })
+            $("#sku-add").click(function(){
+                var attr_name = $.trim($(this).parent().prev().val())
+                if(!attr_name){
+                    return false;
+                }
+
+                add_sku(attr_name);
+            })
+
+
+            $("#goods-img").on('click','.item i',function(){
+                $(this).parent().remove()
+            })
+
+            //增加sku-attr
+            $("#sku-add-block").on('click','i.fa-plus',function(){
+                var $this = $(this)
+                //数据
+                var current_index = $this.parent().parent().index()-1
+                var attr_name = $this.next().text()
+                layer.open({
+                    type:1
+                    ,title:'添加属性('+attr_name+')'
+                    ,btn:['确定','取消']
+                    ,area:['500px','200px']
+                    ,content:$('#add-sku-attr-block')
+                    ,yes:function(index, layero){
+                        var input_name = $.trim($("#add-sku-attr-block input[name='attr_name']").val())
+                        if(input_name.length>0){
+                            add_sku_attr(current_index,input_name)
+                        }
+                        layer.close(index)
+                    }
+                })
+            })
+
+            //删除
+            $("#sku-add-block").on('click','.control-label>i.fa-close',function(){
+                var current_index = $(this).parent().parent().index()-1
+                $(this).parent().parent().remove()
+                del_sku(current_index)
+            })
+
+            //删除具体sku-attr
+            $("#sku-add-block").on('click','.item-min-attr i.fa-close',function(){
+                console.log('.item-min-attr>i.fa-close')
+                var index = $(this).parent().parent().parent().parent().index()-1;
+                var attr_index = $(this).parent().parent().index();
+                console.log(index)
+                console.log(attr_index)
+                $(this).parent().parent().remove()
+                del_sku_attr(index,attr_index)
+            })
+
+        });
+
+
+
     })
+
+    //初始化sku
+    var sku=[
+        {id:1,name:"attr1",attr:[{id:1,name:"attr1-1"},{id:2,name:"attr1-2"}]},
+        {id:2,name:"attr2",attr:[{id:3,name:"attr2-1"},{id:4,name:"attr2-2"}]},
+        {id:3,name:"attr3",attr:[{id:5,name:"attr3-1"},{id:6,name:"attr3-2"}]},
+        ];
+    show_sku()
+    draw_table()
+    function show_sku(){
+        console.log(typeof sku)
+        if(typeof sku==='object' && sku.length>0){
+            var html='';
+            sku.map(function(item,index){
+                var attr = item.attr
+                html +='<div class="form-group">\n' +
+                    '<label  class="col-sm-3 control-label"><i class="fa fa-fw fa-plus"></i><i class="fa fa-fw fa-close"></i><em>'+item.name+'</em></label>\n' +
+                    '<div class="col-sm-9">\n';
+                attr.map(function(attr_item,attr_index){
+                    html +='<div class="btn-group item-min-attr">\n' +
+                        '<button type="button" class="btn btn-xs btn-danger"><i class="fa fa-fw fa-close"></i></button>\n' +
+                        '<button type="button" class="btn btn-xs btn-success">'+attr_item.name+'</button>\n' +
+                        '</div>\n';
+                })
+
+
+                html+='</div>\n' +
+                    '</div>';
+            })
+            $("#sku-add-block").append(html)
+        }
+    }
+
+    //新增sku属性
+    function add_sku(attr_name){
+        //商品sku
+        var sku_struct={
+            name:attr_name,
+            attr:[],
+        };
+        //页面新增数据
+        $("#sku-add-block").append('<div class="form-group">\n' +
+            '<label  class="col-sm-3 control-label"><i class="fa fa-fw fa-plus"></i><i class="fa fa-fw fa-close"></i><em>'+attr_name+'</em></label>\n' +
+            '<div class="col-sm-9">\n' +
+            '</div>\n' +
+            '</div>');
+        //插入数据
+        sku.push(sku_struct);
+        //重新绘制表格
+        draw_table()
+    }
+
+    //新增sku属性
+    function add_sku_attr(index,name){
+        //强转
+        index=index-0;
+        if(!sku.hasOwnProperty(index)){
+            return false;
+        }
+        sku[index].attr.push({
+            name:name
+        })
+        console.log(sku);
+
+        //页面新增数据
+        var opt_block = $("#sku-add-block>div").eq(index+1);
+
+        opt_block.children('div').append('<div class="btn-group item-min-attr">\n' +
+            '<button type="button" class="btn btn-xs btn-danger"><i class="fa fa-fw fa-close"></i></button>\n' +
+            '<button type="button" class="btn btn-xs btn-success">'+name+'</button>\n' +
+            '</div>\n');
+
+        //重新绘制表格
+        draw_table()
+    }
+
+    //删除sku
+    function del_sku(index) {
+        if(!sku.hasOwnProperty(index)){
+            return false;
+        }
+        sku.splice(index,1)
+        console.log(sku)
+
+        draw_table()
+    }
+    //删除块属性
+    function del_sku_attr(index,attr_index) {
+        //验证索引是否存在
+        if(!sku.hasOwnProperty(index) || !sku[index].hasOwnProperty('attr') || !sku[index].attr.hasOwnProperty(attr_index)){
+            return false;
+        }
+        console.log(sku)
+        sku[index].attr.splice(attr_index,1)
+        console.log(sku)
+
+        //重新绘制表格
+        draw_table()
+    }
+
+    //绘制table数据
+    function draw_table() {
+        var html = ''
+        if(typeof sku==='object' && sku.length>0){
+            var attr_sku = [];
+            var html ='';
+            sku.map(function(item,index){
+
+                attr_sku.push(item.attr)
+            })
+            var descartes = calcDescartes(attr_sku)
+            descartes.map(function(item,index){
+                var group_name = []
+                item.map(function(attr_item,attr_index){
+                    group_name.push(attr_item.name)
+                })
+                console.log(group_name)
+                html+=' <tr>\n' +
+                    '<td><i class="fa fa-fw fa-close"></i></td>\n'+
+                    '<td>'+group_name.join('/')+'</td>\n' +
+                    '<td><input type="number"/></td>\n' +
+                    '<td><input type="number"/></td>\n' +
+                    '</tr>'
+            })
+            console.log(descartes)
+            console.log(html)
+            $("#sku-block table tbody").append(html)
+        }
+    }
+    function calcDescartes (array) {
+        if (array.length < 2) return array[0] || [];
+        return [].reduce.call(array, function (col, set) {
+            var res = [];
+            col.forEach(function (c) {
+                set.forEach(function (s) {
+                    var t = [].concat(Array.isArray(c) ? c : [c]);
+                    t.push(s);
+                    res.push(t);
+                })
+            });
+            return res;
+        });
+    }
+
 </script>
 <?php $this->endBlock();?>
 

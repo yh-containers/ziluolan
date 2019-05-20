@@ -7,12 +7,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name= "format-detection" content="telephone = no" />
     <title><?= empty($this->title)?\Yii::$app->name:$this->title?></title>
-    <meta name="keywords" content="{$base.key}" />
-    <meta name="description" content="{$base.desc}" />
-    <link rel="stylesheet" href="/assets/layui-v2.4.5/css/layui.css">
+    <meta name="keywords" content="<?=empty($this->params['meta_key'])?'':$this->params['meta_key']?>" />
+    <meta name="description" content="<?=empty($this->params['meta_desc'])?'':$this->params['meta_desc']?>" />
     <link rel="stylesheet" type="text/css" href="/assets/wechat/css/style.css" />
     <script type="text/javascript" src="/assets/wechat/js/jquery-1.8.3.min.js"></script>
     <script type="text/javascript" src="/assets/wechat/js/common.js"></script>
+    <link rel="stylesheet" href="/assets/layui-v2.4.5/css/layui.css">
     <script type="text/javascript" src="/assets/layui-v2.4.5/layui.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
 
 </body>
 </html>
-
+<script type="text/javascript" src="<?=\Yii::getAlias('@assets')?>/js/handle.js"></script>
 <?php if (isset($this->blocks['script'])): ?>
     <?= $this->blocks['script'] ?>
 

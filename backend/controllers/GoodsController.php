@@ -56,7 +56,7 @@ class GoodsController extends CommonController
             $transaction = \Yii::$app->db->beginTransaction();
             try {
                 //编辑状态
-                if (!empty($id)) {
+                if (!empty($id) && !empty($goods_sku_id)) {
                     \common\models\GoodsSku::deleteAll(['and', ['gid' => $id], ['not in', 'id', $goods_sku_id]]);
                 }
 

@@ -25,8 +25,31 @@ class IndexController extends CommonController
 
     public function actionIndex()
     {
+        //轮播图
+        $model_ad = \common\models\Ad::find()->asArray()->where(['status'=>1])->orderBy('sort asc')->all();
+        //产品展示
+        $model_goods = \common\models\Goods::find()->asArray()->with(['linkSkuOne'])->where(['status'=>1])->orderBy('sort asc')->limit(8)->all();
+        //新闻资讯
+        $model_news = \common\models\Article::find()->with(['linkNavPage'])->asArray()->where(['status'=>1])->orderBy('addtime desc')->limit(6)->all();
+//        var_dump($model_news);exit;
         return $this->render('index',[
-
+            'model_ad' => $model_ad,
+            'model_goods' => $model_goods,
+            'model_news' => $model_news,
         ]);
+    }
+
+
+    /**
+     * Logout action.
+     *
+     * @return string
+     */
+    public function actionLogout()
+    {
+        $session = \yii::$app->session;
+        $session->destroy();
+
+        return $this->goHome();
     }
 }

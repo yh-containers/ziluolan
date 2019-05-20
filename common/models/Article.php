@@ -39,7 +39,7 @@ class Article extends BaseModel
             ['is_up','default','value'=>0],
             ['visit','default','value'=>0],
             ['status','default','value'=>1],
-            [['relation_id','from','key','desc'], 'safe'],
+            [['relation_id','from','key','desc','addtime'], 'safe'],
         ];
     }
 

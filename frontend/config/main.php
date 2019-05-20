@@ -7,7 +7,7 @@ $params = array_merge(
 );
 
 return [
-    'id' => 'app-frontend',
+    'id' => 'app-frontend1111',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
     'controllerNamespace' => 'frontend\controllers',
@@ -19,6 +19,10 @@ return [
             'identityClass' => 'common\models\User',
             'enableAutoLogin' => true,
             'identityCookie' => ['name' => '_identity-frontend', 'httpOnly' => true],
+        ],
+        'pagination' =>[
+            'class' => 'yii\data\Pagination',
+            'pageSize'=>10
         ],
         'session' => [
             // this is the name of the session cookie used for login on the frontend
@@ -43,8 +47,8 @@ return [
             'rules' => [
             ],
         ],
-        //调整页面路由
-        'defaultRoute' => 'index',
     ],
+    //调整页面路由
+    'defaultRoute' => 'index',
     'params' => $params,
 ];

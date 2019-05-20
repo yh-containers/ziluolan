@@ -29,6 +29,12 @@ class Goods extends BaseModel
         ]);
     }
 
+    //商品封面图
+    public static function getCoverImg($img)
+    {
+        $img = $img?explode(',',$img):null;
+        return $img[0];
+    }
 
 
     public function rules()
@@ -46,7 +52,13 @@ class Goods extends BaseModel
         ];
     }
 
+    //商品一件sku
+    public function getLinkSkuOne()
+    {
+        return $this->hasOne(GoodsSku::className(),['gid'=>'id'])->groupBy('gid')->orderBy('price asc');
+    }
 
+    //商品sku
     public function getLinkSku()
     {
         return $this->hasMany(GoodsSku::className(),['gid'=>'id']);

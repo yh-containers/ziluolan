@@ -8,10 +8,10 @@ class SysNavPage extends BaseModel
     use SoftDelete;
 
     public static $nav_prop = [
-        ['name'=>'单页面','temp'=>''],
-        ['name'=>'新闻','temp'=>''],
-        ['name'=>'产品','temp'=>''],
-        ['name'=>'案例','temp'=>''],
+        ['name'=>'单页面','article_info'=>['type'=>'direct_detail']],
+        ['name'=>'新闻','article_info'=>['type'=>'news','page_temp'=>'list']],
+        ['name'=>'产品'],
+        ['name'=>'案例','article_info'=>['type'=>'case']],
     ];
 
     public static function tableName()
@@ -33,7 +33,7 @@ class SysNavPage extends BaseModel
     public function rules()
     {
         return [
-            [['name','route'], 'required','message'=>'{attribute}必须输入'],
+            [['name'], 'required','message'=>'{attribute}必须输入'],
             ['name', 'string','length'=>[1,15],'tooLong'=>'{attribute}不得超过{max}个字符','tooShort'=>'{attribute}不得低于{min}个字符'],
 //            ['route','match','pattern'=>'/^[0-9A-Za-z\/|&=-]+$/','message'=>'路由只支持字母、数字、|&=-'],
             ['sort','number','min'=>0,'max'=>100,'tooSmall'=>'{attribute}不得低于{min}','tooBig'=>'{attribute}不得高于{max}','message'=>'{attribute}必须是数字'],

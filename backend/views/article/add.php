@@ -58,7 +58,7 @@
                 <label for="inputPassword3" class="col-sm-2 control-label">文章日期</label>
 
                 <div class="col-sm-8">
-                    <input type="text" maxlength="150" class="form-control lay-date" name="addtime" value="<?= $model['addtime'] ? $model['addtime'] : date('Y-m-d H:i:s') ?>" placeholder="文章日期">
+                    <input type="text" maxlength="150" class="form-control lay-date" name="addtime" value="<?= $model['addtime'] ? date('Y-m-d H:i:s',$model['addtime']) : date('Y-m-d H:i:s') ?>" placeholder="文章日期">
                 </div>
             </div>
 
