@@ -20,9 +20,10 @@ class User extends BaseModel
      * @param $sku_id int 商品skuid
      * @param $num int 数量
      * @param $mod bool 调整数量
+     * @param $num_step int 增/减 步进值
      * @return bool
      */
-    public function addShoppingCart($gid,$sku_id,$num=1,$mod=false)
+    public function addShoppingCart($gid,$sku_id,$num=1,$mod=false,$num_step=0)
     {
         $bool = true;
         $model = UserCart::find()->where(['uid'=>$this->id,'gid'=>$gid])->one();
@@ -30,7 +31,7 @@ class User extends BaseModel
             if($num<0 && $model->num<=1){
 
             }elseif($mod){
-                $model->num=$num;
+                $model->num= $num+$num_step;
                 $bool = $model->save();
             }else{
                 $bool = $model->updateCounters(['num'=>$num]);

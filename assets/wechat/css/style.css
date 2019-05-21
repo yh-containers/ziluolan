@@ -387,7 +387,6 @@ a{color:#333;}
 .payment-bar .settlement{display:inline-block;float:right;width:100px;height:49px;text-align:center;color:#fff;font-size:16px;background:#990098;}
 .payment-bar input.check{left:3%;}
 
-input[type="checkbox"]{-webkit-appearance:none;outline: none;}
 input.check{background:url(../images/icon_radio3.png) no-repeat center left;background-size:20px 20px;position:absolute;top:50%;left:10px;margin-top:-18px;width:20px;height:35px;left:0px}
 input.check:checked{background:url(../images/icon_radio4.png) no-repeat center left;background-size:20px 20px;}
 input.goodsCheck:checked{background:url(../images/icon_radio4.png) no-repeat center left;background-size:20px 20px;}

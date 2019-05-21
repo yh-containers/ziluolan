@@ -18,11 +18,11 @@ class Nav extends Widget
                     $route = $vo['route'];
                 }else{
                     $arr = $vo['route']?explode('|',$vo['route']):[];
-                    $route = [$arr[0]];
                 }
 
 //                var_dump($route);
                 if(!empty($arr)){
+                    $route = [$arr[0]];
                     if(isset($arr[1])){
                         //url参数
                         $param = explode('&',$arr[1]);

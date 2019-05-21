@@ -18,9 +18,10 @@
                 <thead>
                 <tr>
                     <th width="80">ID</th>
-                    <th width="250">商品名称</th>
+                    <th width="150">商品名称</th>
                     <th width="100">商品价格</th>
                     <th width="80">分佣模式</th>
+                    <th width="200">商品sku</th>
                     <th width="150">更新时间</th>
                     <th width="100">状态</th>
                     <th width="100">操作</th>
@@ -31,8 +32,21 @@
                     <tr>
                         <td><?=$vo['id']?></td>
                         <td title="<?=$vo['name']?>"><?=mb_strlen($vo['name'],'utf8')>20?mb_substr($vo['name'],0,20,'utf8').'.....':$vo['name']?></td>
-                        <td><?=empty($vo['linkSku'])?0.00:$vo['linkSku'][0]['price']?></td>
+                        <td><?=empty($vo['linkSkuAttrPriceOne'])?0.00:$vo['linkSkuAttrPriceOne']['price']?></td>
                         <td><?=\common\models\Goods::getPropInfo('fields_mode',$vo['mode'],'name')?></td>
+                        <td>
+                            <?php foreach($vo['linkSku'] as $sku){?>
+                                <div class="row" >
+                                    <label class="col-sm-4 control-label"><?=$sku['name']?> ：</label>
+
+                                    <div class="col-sm-8">
+                                        <?php foreach($sku['linkSkuAttr'] as $attr){?>
+                                            <?=$attr['name']?>,
+                                        <?php }?>
+                                    </div>
+                                </div>
+                            <?php }?>
+                        </td>
                         <td><?=$vo['update_time']?date('Y-m-d H:i:s',$vo['update_time']):''?> </td>
                         <td><?=\common\models\Goods::getPropInfo('fields_status',$vo['status'])?></td>
                         <td>

@@ -3,10 +3,17 @@ $this->title = $model['name'];
 
 ?>
 
+<?php $this->beginBlock('style')?>
+<style>
+    #edit-class{}
+    #edit-class .choose-sku-item.disable{background: #a8a8a8;color:#fff}
+</style>
+<?php $this->endBLock()?>
+
 <?php $this->beginBlock('content')?>
 
 <body style="background:#eee;">
-<div class="header"> <a href="javascript:window.history.back()" class="back"><img src="__PUBLIC__/m/images/back.png" alt=""></a>
+<div class="header"> <a href="javascript:window.history.back()" class="back"><img src="<?=\Yii::getAlias('@assets')?>/images/back.png" alt=""></a>
     <div class="logo">商品详情</div>
 </div>
 <div class="content pro">
@@ -14,28 +21,34 @@ $this->title = $model['name'];
         <ul class="slides">
 
             <?php
-                $images = empty($model['images'])?[]:$model['images'];
-                foreach ($images as $vo){
+                $image = empty($model['image'])?[]:explode(',',$model['image']);
+                foreach ($image as $vo){
             ?>
                 <li><img src="<?=$vo?>" /></li>
             <?php }?>
         </ul>
     </div>
-    <!-- banner图JS -->
-    <script>
 
-    </script>
 
     <!-- 业务范围-->
     <div class="title bj1">
         <div class=" wrap">
-            <div class="title1">{$model['name']}</div>
+            <div class="title1"><?=$model['name']?></div>
 
 
-            <div class="title2">单价:<span class="span1">{$data.price}</span></div>
+            <div class="title2">单价:<span class="span1" id="price">0.00</span></div>
             <div class="title3 clearfix"></div>
         </div>
     </div>
+
+    <div class="title bj1" id="choose-sku">
+        <div class=" wrap">
+            <div class="title2">已选规格:<em></em></div>
+            <div class="title3 clearfix"></div>
+        </div>
+    </div>
+    
+    
     <div class="slideTxtBox clearfix">
         <div class="hd bj1 clearfix">
             <ul>
@@ -57,129 +70,167 @@ $this->title = $model['name'];
     <div class="clearfix" style="height:70px;"> </div>
     <!-- 底部-->
     <div class="payment-bar pro-footer clearfix">
-        <a href="/m/cart.html">
+        <a href="<?=\yii\helpers\Url::to(['mine/cart'])?>">
             <div class="icon fl"></div>
         </a>
-        <a  href="javascript:void(0)" onclick="onshowcart()">
-            <div class="gouwuche fl" onclick="" id="gouwu">加入购物车</div>
+        <a  href="javascript:void(0)" onclick="joinCart()">
+            <div class="gouwuche fl choose-sku" id="gouwu">加入购物车</div>
         </a>
-        <a href="javascript:;" onclick="addVlaue('settlement',1)"><div class="goumai fr">立即购买</div></a>
+        <a href="javascript:;" onclick="buy()" ><div class="goumai fr">立即购买</div></a>
 
     </div>
 </div>
 
 <!-- 产品选择 -->
-<div class="edit-class" id="edit-class" <?php if($_GET['tid']==1){ ?>style="display:block"<?php };?>>
-    <div class="xiala clearfix" style="display: block;"><strong><a href="javascript:void(0)" onclick="onhiencart()"><i class="fr guanbi"></i></a></strong>
+<div class="edit-class" id="edit-class">
+    <div class="xiala clearfix" style="display: block;"><strong><a href="javascript:void(0)" id="choose-sku-hide"><i class="fr guanbi"></i></a></strong>
         <div class="wrap">
-            <div class="title clearfix">{$data.name}</div>
-            <div class="content clearfix">
-                <div class="img fl"><img src="__PUBLIC__{$data.image}"></div>
-                <div class="right fl">
-                    <if condition="in_array($data['id'],array('34','29','30','1'))">
-                        <div class="price">￥<?php echo $data[price]*2; ?></div>
-                        <else />
-                        <div class="price">￥<?php echo $data[price]*1; ?></div>
-                    </if>
-
-
-                    <input type="hidden" id="price" value="{$data.price}" /><br />
-                    <if condition="in_array($data['id'],array('34','29','30','1'))">
-                        <p>*快递费15元/2盒</p>
-                        <elseif condition="$data['id'] eq 33" />
-                        <p>*免邮费</p>
-                        <elseif condition="$data['id'] eq 32" />
-                        <p>*快递费5元/盒</p>
-                    </if>
-
-                    <p>*下单请备注购买需求</p>
-                </div>
-            </div>
-            <input type="hidden" value="{$data.name}" class="data_name">
+            <div class="title clearfix">选择商品规格</div>
+            <?php foreach($model['linkSku'] as $vo){?>
             <div class="color-class clearfix">
-                <p>产品备注</p>
+                <p><?=$vo['name']?></p>
                 <div class="size" style="border-bottom:none;">
-                    <foreach name="pro_name" item="val" key="ke">
-                        <span class="freight-info <?php if($data['id']==$val['id']){ ?>cur<?php };?>" <?php if($ke != 0){ ?>style="margin-top:10px" <?php };?> ><a <?php if($data['id']==$val['id']){ ?>style="color:#fff"<?php };?> href="/m/view/{$val.id}.html?tid=1">{$val.name}</a></span>
-                    </foreach>
+                    <?php foreach($vo['linkSkuAttr'] as $sku){?>
+                        <span class="freight-info choose-sku-item" data-id="<?=$sku['id']?>"><?=$sku['name']?></a></span>
+                    <?php }?>
 
                 </div>
             </div>
-            <div class="color-class clearfix">
-                <p>请选择规格</p>
-                <div class="size" style="border-bottom:none;">
-
-                    <if condition="in_array($data['id'],array('34','29','30','1'))">
-                        <input type="hidden" name="guige" id="guige" value="2">
-                        <else />
-                        <input type="hidden" name="guige" id="guige" value="1">
-                    </if>
-
-
-
-
-                    <if condition="in_array($data['id'],array('34','29','30','1'))">
-                        <span class="freight-info cur" onclick="onGguige(this,2)">2<?php if ($data['cid']==10 or $data['cid']==26){echo '盒';}else{echo '瓶';} ?></span>
-                        <else />
-                        <span class="freight-info cur" onclick="onGguige(this,1)">1<?php if ($data['cid']==10 or $data['cid']==26){echo '盒';}else{echo '瓶';} ?></span>
-                    </if>
-
-                    <if condition="$data['id'] EQ 37">
-                        <span class="freight-info " onclick="onGguige(this,5)">5<?php if ($data['cid']==10 or $data['cid']==26){echo '盒';}else{echo '瓶';} ?></span>
-                        <else />
-                        <span class="freight-info" onclick="onGguige(this,100)">100<?php if($data['cid']==10 or $data['cid']==26){echo '盒';}else{echo '瓶';} ?></span>
-                        <span class="freight-info" onclick="onGguige(this,300)">300<?php if($data['cid']==10 or $data['cid']==26){echo '盒';}else{echo '瓶';} ?></span>
-                    </if>
-
-
-                </div>
-                <div class="size" style="border-bottom:none;">
-                    <if condition="$data['id'] EQ 32">
-                        <input type="hidden" name="type" id="type" value="绿盒装(排毒瘦身)">
-                        <span class="freight-info cre" onclick="onGtype(this,'绿盒装(排毒瘦身)')">绿盒装(排毒瘦身)</span>
-                        <span class="freight-info " onclick="onGtype(this,'黄盒装(调节三高)')">黄盒装(调节三高)</span>
-                        <span class="freight-info " onclick="onGtype(this,'黑盒装(助睡眠)')">黑盒装(助睡眠)</span>
-                        <span class="freight-info " onclick="onGtype(this,'白盒装(补肾)')">白盒装(补肾)</span>
-                        <else />
-                        <input type="hidden" name="type" id="type" value="无">
-                    </if>
-
-                </div>
-            </div>
-            <div class="color-class clearfix" style=" padding-bottom:20px">
-                <p>
-
-
-                    <if condition="in_array($data['id'],array('34','29','30','1'))">
-                        <span class="fl">购买数量/份</span><span class="fl heshu" style="margin-left:10px;color:red">已选择：2盒</span>
-                        <else />
-                        <span class="fl">购买数量/份</span><span class="fl heshu" style="margin-left:10px;color:red">已选择：1盒</span>
-                    </if>
-
-                <div class="tianjia fr">
-                    <div class="shop-arithmetic">
-                        <a href="javascript:;" class="" onclick="jian(this)" style="position:relative;top:0px;overflow:hidden;border-right:1px solid #e0e0e0;">-</a>
-                        <span class="num"  class="num_input" id="jian_sun" style="line-height:23px;top:0px;overflow:hidden;left:0;width:30px;">1</span>
-                        <a href="javascript:;" onclick="addp(this)" class="" style="position:relative;top:0px;overflow:hidden;border-left:1px solid #e0e0e0;left: -1px;">+</a>
-                    </div>
-                </div>
-                </p>
-            </div>
+            <?php }?>
         </div>
     </div>
 </div>
-
+<div id="fade" class="black_overlay" style="display: none;"></div>
 <?php $this->endBlock()?>
 <?php $this->beginBlock('script')?>
 <script src="<?=\Yii::getAlias('@assets')?>/js/jquery.flexslider-min.js"></script>
+<script type="text/javascript" src="<?=\Yii::getAlias('@assets')?>/js/jquery.SuperSlide.2.1.1.js"></script>
 <script>
+    //商品规格数据
+    var sku_choose_info = <?=json_encode($sku_choose_info,JSON_UNESCAPED_UNICODE)?>;
+    //商品规格数据-选择项为主键
+    var sku_attr_info ={}
+    for (var item in sku_choose_info){
+        var key = '|'+sku_choose_info[item].sku_group+'|'
+        sku_choose_info[item].sku_id = item
+        sku_attr_info[key]=sku_choose_info[item]
+    }
+
+    console.log(sku_attr_info)
+    //选择商品的sku
+    var sku_id = "<?=$sku_id?>";
+    if(sku_choose_info.hasOwnProperty(sku_id)){
+        handle_sku_switch(sku_choose_info[sku_id].sku_group);
+    }
+
     $(function(){
         jQuery(".slideTxtBox").slide({easing:"easeOutCirc"});
         $('.flexslider').flexslider({
             directionNav: true,
             pauseOnAction: false
         });
+        
+        //选择商品属性
+        $("#choose-sku").click(function () {
+            $("#edit-class").show();
+            $("#fade").show();
+        })
+        $("#choose-sku-hide").click(function () {
+            $("#edit-class").hide();
+            $("#fade").hide();
+        })
 
+        //选择商品sku-attr
+        $(".choose-sku-item").click(function(){
+            if(!$(this).hasClass('cur') && !$(this).hasClass('disable')){
+                //移除其它选项的选中效果
+                $(this).parent().find('.cur').removeClass('cur')
+                $(this).addClass('cur')
+                var sku_id_group_arr = []
+                //当前点击的所有上级
+                $(this).parent().parent().prevAll().find('.cur').each(function () {
+                    sku_id_group_arr.push($(this).data('id')+'')
+                })
+                //包含自己
+                sku_id_group_arr.push($(this).data('id')+'')
+                //当前点击的下级
+                //全部禁用
+                $(this).parent().parent().nextAll().find('.choose-sku-item').addClass('disable')
+                $(this).parent().parent().next().find('.choose-sku-item').each(function(index){
+
+                    let sku_id_group_arr_temp  = sku_id_group_arr;
+                    let item_sku_id =$(this).data('id')+'';
+                    if(index){
+                        sku_id_group_arr_temp[sku_id_group_arr_temp.length-1]=item_sku_id
+                    }else{
+                        sku_id_group_arr_temp.push(item_sku_id)
+                    }
+                    let sku_id_group_arr_temp_str = sku_id_group_arr_temp.sort(sortNumber).join('|')
+                    sku_id_group_arr_temp_str = '|'+sku_id_group_arr_temp_str+'|';
+                    for (let item in sku_attr_info){
+                        if($(this).hasClass('disable') && item.indexOf(sku_id_group_arr_temp_str)>-1){
+                            $(this).removeClass('disable')
+                        }
+                    }
+                })
+                //移除未选择的所有项
+                $(this).parent().parent().nextAll().find('.cur').removeClass('cur')
+                handle_sku_switch()
+            }
+        })
     });
+    //加入购物车
+    function joinCart(){
+        $.common.reqInfo({url:'<?=\yii\helpers\Url::to(['mine/add-cart'])?>',data:{gid:'<?=$model['id']?>',sku_id:sku_id}})
+    }
+
+    //立即购买
+    function buy(){
+        var url = '<?=\yii\helpers\Url::to(['order/info','gid'=>$model['id']])?>';
+        window.location.href=url+(url.indexOf('?')===-1?'?':'&')+'sku_id='+sku_id
+    }
+
+
+
+    //切换商品展--选中效果
+    function handle_sku_switch(sku_group) {
+        if(sku_group){
+            $("#edit-class .choose-sku-item").each(function(){
+                var sku_attr_id = $(this).data('id')+'';
+                if(sku_group.indexOf(sku_attr_id)!==-1){
+                    $(this).addClass('cur')
+                }
+            })
+        }else{
+            var choose_sku_attr=[]
+            $("#edit-class .cur").each(function(){
+                var sku_attr_id = $(this).data('id')+'';
+                choose_sku_attr.push(sku_attr_id)
+            })
+            //组装
+            sku_group = choose_sku_attr.sort(sortNumber).join('|')
+
+        }
+        show_sku_info(sku_group)
+    }
+
+    //显示商品信息
+    function show_sku_info(sku_group) {
+        sku_group = '|'+sku_group+'|';
+        if(sku_attr_info.hasOwnProperty(sku_group)){
+            var info = sku_attr_info[sku_group]
+            console.log(info)
+            sku_id = info.sku_id;
+            $("#price").text(info.price)
+            $("#choose-sku em").text(info.name)
+        }
+
+    }
+
+    function sortNumber(a,b)
+    {
+        return a - b
+    }
+
 </script>
 <?php $this->endBlock()?>

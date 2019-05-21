@@ -52,10 +52,14 @@ class Goods extends BaseModel
         ];
     }
 
-    //商品一件sku
-    public function getLinkSkuOne()
+    //商品一件sku价格
+    public function getLinkSkuAttrPriceOne()
     {
-        return $this->hasOne(GoodsSku::className(),['gid'=>'id'])->groupBy('gid')->orderBy('price asc');
+        return $this->hasOne(GoodsSkuAttrPrice::className(),['gid'=>'id'])->groupBy('gid')->orderBy('price asc');
+    }
+    public function getLinkSkuAttrPrice()
+    {
+        return $this->hasMany(GoodsSkuAttrPrice::className(),['gid'=>'id']);
     }
 
     //商品sku

@@ -12,10 +12,6 @@ class UserCart extends BaseModel
     }
 
 
-    public function getLinkGoods()
-    {
-        return  $this->hasOne(Goods::className(),['id'=>'gid']);
-    }
 
     /**
      * 获取用户购物车数量
@@ -29,5 +25,16 @@ class UserCart extends BaseModel
             \common\models\Goods::tableName().'.status'=>1
         ])->sum('num');
         return $num?$num:0;
+    }
+
+
+    public function getLinkGoods()
+    {
+        return  $this->hasOne(Goods::className(),['id'=>'gid']);
+    }
+
+    public function getLinkSkuAttrPrice()
+    {
+        return  $this->hasOne(GoodsSkuAttrPrice::className(),['id'=>'sid']);
     }
 }

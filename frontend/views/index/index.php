@@ -29,10 +29,10 @@ $this->title = '紫罗兰花青素';
                             <div class="product_img"><a href="<?=\yii\helpers\Url::to(['goods/detail','id'=>$vo['id']])?>"><img src="<?=\common\models\Goods::getCoverImg($vo['image'])?>"></a></div>
                             <div class="product_text">
                                 <p class="product_name"><a href="<?=\yii\helpers\Url::to(['goods/detail','id'=>$vo['id']])?>"><?=$vo['name']?></a></p>
-                                <p class="product_price">￥<?=$vo['linkSkuOne']['price']?>
+                                <p class="product_price">￥<?=$vo['linkSkuAttrPriceOne']['price']?>
                                     <a href="javascript:;"
                                        onclick="$.common.reqInfo(this)"
-                                       data-conf="{url:'<?=\yii\helpers\Url::to(['mine/add-cart'])?>',data:{gid:<?=$vo['id']?$vo['id']:0?>,sku_id:<?=$vo['linkSkuOne']['id']?$vo['linkSkuOne']['id']:0?>}}"
+                                       data-conf="{url:'<?=\yii\helpers\Url::to(['mine/add-cart'])?>',data:{gid:<?=$vo['id']?$vo['id']:0?>,sku_id:<?=$vo['linkSkuAttrPriceOne']['id']?$vo['linkSkuAttrPriceOne']['id']:0?>}}"
                                     ><img src="<?=\Yii::getAlias('@assets')?>/images/car01.png"></a>
                                 </p>
                             </div>

@@ -11,12 +11,15 @@
     #add-spu-block input{width: 160px;display: inline-block}
     #add-spu-block .fa-close{color: red}
 
-    #sku-add-block .form-group{}
+    #sku-add-block .form-group{border-bottom: 1px solid #ccc;}
     #sku-add-block .form-group .control-label{text-align: left}
     #sku-add-block .form-group .control-label i{cursor: pointer}
     #sku-add-block .form-group .control-label i.fa-plus{color:#0a73bb ;margin-right: 3px}
     #sku-add-block .form-group .control-label i.fa-close{color:red}
     #sku-add-block .form-group .control-label em{float:right}
+
+    #sku-block {}
+    #sku-block .fa-close{color:red;cursor: pointer}
 </style>
 <?php $this->endBlock();?>
 
@@ -182,7 +185,7 @@
         </div>
         <!-- /.box-body -->
         <div class="box-footer">
-            <button type="button" class="btn btn-info col-sm-offset-2 col-sm-8 col-xs-12" id="submit"  onclick="$.common.formSubmit(null,<?=$model['id']?0:1?>)">保存</button>
+            <button type="button" class="btn btn-info col-sm-offset-2 col-sm-8 col-xs-12" id="submit">保存</button>
         </div>
         <!-- /.box-footer -->
     </form>
@@ -239,7 +242,7 @@
                 var $this = $(this)
                 //数据
                 var current_index = $this.parent().parent().index()-1
-                var attr_name = $this.next().text()
+                var attr_name = $this.next().next().text()
                 layer.open({
                     type:1
                     ,title:'添加属性('+attr_name+')'
@@ -265,13 +268,43 @@
 
             //删除具体sku-attr
             $("#sku-add-block").on('click','.item-min-attr i.fa-close',function(){
-                console.log('.item-min-attr>i.fa-close')
+                //console.log('.item-min-attr>i.fa-close')
+                // console.log(123)
                 var index = $(this).parent().parent().parent().parent().index()-1;
                 var attr_index = $(this).parent().parent().index();
-                console.log(index)
-                console.log(attr_index)
+                //console.log(index)
+                //console.log(attr_index)
                 $(this).parent().parent().remove()
                 del_sku_attr(index,attr_index)
+            })
+            //修改文本属性
+            $("#sku-block").on('change','tbody input',function(){
+                var index = $(this).parents('tr').index()
+                var name = $(this).data('name')
+                var val = $(this).val()
+                set_sku_table(index,name,val)
+            })
+
+
+            //删除
+            $("#sku-block").on('click','tbody i.fa-close',function(){
+                var index = $(this).parents('tr').index()
+                $(this).parents('tr').remove()
+                draw_table_del(index)
+            })
+
+            //提交数据
+            $("#submit").click(function(){
+                var req_obj = {};
+                $("#form").serializeArray().map(function(item,index){
+                    req_obj[item.name] = item.value
+                })
+                //绑定sku信息
+                req_obj['sku'] = sku;
+
+                //绑定sku价格信息
+                req_obj['sku_table'] = sku_table;
+                sendAjax({url:"",method:"post",data:req_obj})
             })
 
         });
@@ -281,15 +314,14 @@
     })
 
     //初始化sku
-    var sku=[
-        {id:1,name:"attr1",attr:[{id:1,name:"attr1-1"},{id:2,name:"attr1-2"}]},
-        {id:2,name:"attr2",attr:[{id:3,name:"attr2-1"},{id:4,name:"attr2-2"}]},
-        {id:3,name:"attr3",attr:[{id:5,name:"attr3-1"},{id:6,name:"attr3-2"}]},
-        ];
+    var temp_id=0;
+    var sku=<?=json_encode($sku,JSON_UNESCAPED_UNICODE)?>;
+    //初始化table
+    var sku_table=<?=json_encode($sku_table,JSON_UNESCAPED_UNICODE)?>;
     show_sku()
-    draw_table()
+    draw_table_data()
     function show_sku(){
-        console.log(typeof sku)
+        //console.log(typeof sku)
         if(typeof sku==='object' && sku.length>0){
             var html='';
             sku.map(function(item,index){
@@ -314,8 +346,10 @@
 
     //新增sku属性
     function add_sku(attr_name){
+        temp_id--;
         //商品sku
         var sku_struct={
+            temp_id:temp_id,
             name:attr_name,
             attr:[],
         };
@@ -328,18 +362,22 @@
         //插入数据
         sku.push(sku_struct);
         //重新绘制表格
-        draw_table()
+        draw_table_data(1)
     }
 
     //新增sku属性
     function add_sku_attr(index,name){
+        temp_id--;
         //强转
         index=index-0;
+        console.log(index)
         if(!sku.hasOwnProperty(index)){
             return false;
         }
+
         sku[index].attr.push({
-            name:name
+            temp_id:temp_id,
+            name:name,
         })
         console.log(sku);
 
@@ -352,7 +390,7 @@
             '</div>\n');
 
         //重新绘制表格
-        draw_table()
+        draw_table_data(1)
     }
 
     //删除sku
@@ -361,9 +399,9 @@
             return false;
         }
         sku.splice(index,1)
-        console.log(sku)
+        //console.log(sku)
 
-        draw_table()
+        draw_table_data(1)
     }
     //删除块属性
     function del_sku_attr(index,attr_index) {
@@ -371,43 +409,84 @@
         if(!sku.hasOwnProperty(index) || !sku[index].hasOwnProperty('attr') || !sku[index].attr.hasOwnProperty(attr_index)){
             return false;
         }
-        console.log(sku)
+        //console.log(sku)
         sku[index].attr.splice(attr_index,1)
-        console.log(sku)
+        //console.log(sku)
 
         //重新绘制表格
+        draw_table_data(1)
+    }
+    //table数据
+    function draw_table_data(is_reset) {
+        if(!sku_table.length || is_reset===1){
+            if(typeof sku==='object' && sku.length>0){
+                var sku_table_data = [];
+                if(sku.length>1){
+                    var attr_sku = [];
+                    sku.map(function(item,index){
+                        item.attr.length>0 && attr_sku.push(item.attr)
+                    })
+                    sku_table_data = calcDescartes(attr_sku)
+                }else if(sku.length===1){
+
+                    sku_table_data=sku[0]['attr']
+                }
+
+                //重构数据解构
+                sku_table = [];
+                sku_table_data.map(function(item,index){
+                    sku_table.push({
+                        'attr':Array.isArray(item)?item:[item],
+                        'info':{}
+                    })
+                })
+            }
+        }
+        console.log(sku_table)
         draw_table()
     }
-
     //绘制table数据
     function draw_table() {
-        var html = ''
-        if(typeof sku==='object' && sku.length>0){
-            var attr_sku = [];
-            var html ='';
-            sku.map(function(item,index){
-
-                attr_sku.push(item.attr)
-            })
-            var descartes = calcDescartes(attr_sku)
-            descartes.map(function(item,index){
-                var group_name = []
-                item.map(function(attr_item,attr_index){
-                    group_name.push(attr_item.name)
+        if(typeof sku_table==='object' && sku_table.length>0){
+            var html = ''
+            sku_table.map(function(item,index){
+                var group_name = [];
+                //属性信息
+                var sku_table_attr = item.hasOwnProperty('attr')?item.attr:[];
+                //info资料
+                var sku_table_info = item.hasOwnProperty('info')?item.info:{};
+                    sku_table_attr.map(function(gp_item,gp_index){
+                    if(gp_item.hasOwnProperty('name')){
+                        group_name.push(gp_item.name)
+                    }
                 })
-                console.log(group_name)
+
                 html+=' <tr>\n' +
                     '<td><i class="fa fa-fw fa-close"></i></td>\n'+
-                    '<td>'+group_name.join('/')+'</td>\n' +
-                    '<td><input type="number"/></td>\n' +
-                    '<td><input type="number"/></td>\n' +
+                    '<td>'+group_name.join('||')+'</td>\n' +
+                    '<td><input type="number" class="form-control" data-name="price" value="'+(sku_table_info.hasOwnProperty('price')?sku_table_info.price:'')+'"/></td>\n' +
+                    '<td><input type="number" class="form-control" data-name="stock" value="'+(sku_table_info.hasOwnProperty('stock')?sku_table_info.stock:'')+'"/></td>\n' +
                     '</tr>'
             })
-            console.log(descartes)
-            console.log(html)
-            $("#sku-block table tbody").append(html)
+            //清空数据
+            //添加
+            $("#sku-block table tbody").html('').append(html)
         }
     }
+    //修改table属性
+    function set_sku_table(index,name,val){
+        if(sku_table.hasOwnProperty(index)){
+            sku_table[index]['info'][name]=val
+            console.log(sku_table[index])
+            console.log(sku_table)
+        }
+    }
+    //删除table数据
+    function draw_table_del(index){
+        sku_table.splice(index,1)
+        console.log(sku_table)
+    }
+
     function calcDescartes (array) {
         if (array.length < 2) return array[0] || [];
         return [].reduce.call(array, function (col, set) {

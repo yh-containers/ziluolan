@@ -15,6 +15,10 @@
     <link rel="stylesheet" href="/assets/layui-v2.4.5/css/layui.css">
     <script type="text/javascript" src="/assets/layui-v2.4.5/layui.js"></script>
 </head>
+<?php if (isset($this->blocks['style'])): ?>
+    <?= $this->blocks['style'] ?>
+
+<?php endif; ?>
 <body>
 <!--左侧导航-->
 <?=\frontend\widgets\Nav::widget()?>
