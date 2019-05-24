@@ -13,7 +13,26 @@ class User extends BaseModel
     }
 
 
+    //获取用户微信推广二维码
+    public function getWechatQrcode()
+    {
+        $wechat_qrcode_img = $this->getAttribute('wechat_qrcode_img');
+        if(empty($wechat_qrcode_img)){
+            try{
+                $wechat = \Yii::createObject(\Yii::$app->components['wechat']);
+                //永久二维码
+                list($ticket,$wechat_qrcode_img) = $wechat->qrcode($this->getAttribute('id'),'QR_LIMIT_SCENE');
+                if(!empty($wechat_qrcode_img)){
+                    //保存二维码
+                    $this->wechat_qrcode_img=$wechat_qrcode_img;
+                    $this->save(false);
+                }
+            }catch (\Exception $e){
 
+            }
+        }
+        return $wechat_qrcode_img;
+    }
     /**
      * 添加购物车
      * @param $gid int 商品id
@@ -26,7 +45,7 @@ class User extends BaseModel
     public function addShoppingCart($gid,$sku_id,$num=1,$mod=false,$num_step=0)
     {
         $bool = true;
-        $model = UserCart::find()->where(['uid'=>$this->id,'gid'=>$gid])->one();
+        $model = UserCart::find()->where(['uid'=>$this->id,'gid'=>$gid,'sid'=>$sku_id])->one();
         if(!empty($model)){
             if($num<0 && $model->num<=1){
 
@@ -160,5 +179,11 @@ class User extends BaseModel
         }
     }
 
+
+    //我的上级
+    public function getLinkUserUp()
+    {
+        return $this->hasOne(self::className(),['tuijian_id'=>'id']);
+    }
 
 }

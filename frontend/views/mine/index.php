@@ -33,50 +33,50 @@ $this->params = [
                         <div class="right fr"></div>
                     </li>
                 </a>
-
-
-                <a href="/m/order.html"> <li class="clearfix">
+                <a href="<?=\yii\helpers\Url::to(['order/index'])?>">
+                    <li class="clearfix">
                         <div class="left fl"><i class="i3"></i>我的订单</div>
-                        <div class="right fr"></div>
-                    </li></a>
-
-
-                <a href="/m/warehouse.html?iid=1"><li class="clearfix">
-                        <div class="left fl"><i class="i4"></i>我的仓库</div>
                         <div class="right fr"></div>
                     </li>
                 </a>
 
-                <!--<a href="/m/daishou.html"><li class="clearfix">
-                  <div class="left fl"><i class="i5"></i>我的代售</div>
-                  <div class="right fr"></div>
-                </li>
+
+                <!--<a href="<?/*=\yii\helpers\Url::to(['warehouse'])*/?>">
+                    <li class="clearfix">
+                        <div class="left fl"><i class="i4"></i>我的仓库</div>
+                        <div class="right fr"></div>
+                    </li>
                 </a>-->
 
-                <a href="/m/address.html"><li class="clearfix">
+                <a href="<?=\yii\helpers\Url::to(['address'])?>">
+                    <li class="clearfix">
                         <div class="left fl"><i class="i6"></i>收货地址</div>
                         <div class="right fr"></div>
                     </li>
                 </a>
 
-                <a href="/m/withdraw.html"><li class="clearfix">
+                <a href="<?=\yii\helpers\Url::to(['withdraw'])?>">
+                    <li class="clearfix">
                         <div class="left fl"><i class="i7"></i>账户余额</div>
                         <div class="right fr"></div>
                     </li>
                 </a>
 
-                <li class="clearfix">
-                    <div class="left fl"><i class="i9"></i>分享名片</div>
-                    <div class="right fr"></div>
-                </li>
+                <a href="<?=\yii\helpers\Url::to(['share'])?>">
+                    <li class="clearfix">
+                        <div class="left fl"><i class="i9"></i>分享名片</div>
+                        <div class="right fr"></div>
+                    </li>
+                </a>
 
-                <a href="/m/referee.html">
+                <a href="<?=\yii\helpers\Url::to(['referee'])?>">
                     <li class="clearfix">
                         <div class="left fl"><i class="i9"></i>推荐人</div>
                         <div class="right fr"></div>
                     </li>
                 </a>
-                <a href="/m/about.html">
+
+                <a href="<?=\yii\helpers\Url::to(['article/case','route_alias'=>'about'])?>">
                     <li class="clearfix">
                         <div class="left fl"><i class="i10"></i>关于紫罗兰</div>
                         <div class="right fr"></div>
@@ -87,7 +87,7 @@ $this->params = [
         </div>
 
 
-        <div class="list list1 clearfix">
+        <div class="list clearfix">
             <ul>
                 <li class="clearfix">
                     <div class="left fl"><i class="i10"></i><a href="<?=\yii\helpers\Url::to(['index/logout'])?>">注销登录</a></div>
@@ -97,7 +97,7 @@ $this->params = [
 
     </div>
 
-    <p style="text-align:center; "><a href="tel:400-8039068">客服电话：400-8039068</a></p>
+    <p style="text-align:center; "><a href="tel:<?=\frontend\widgets\Setting::widget(['type'=>'normal','field'=>'tel'])?>">客服电话：<?=\frontend\widgets\Setting::widget(['type'=>'normal','field'=>'tel'])?></a></p>
 </div>
 <?=\frontend\widgets\Footer::widget(['current_action'=>'mine'])?>
 

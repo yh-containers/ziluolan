@@ -74,7 +74,7 @@ class UserAddr extends BaseModel
         $rule = parent::rules();
         $rule = array_merge($rule,[
             ['is_default','default','value'=>0],
-            [['uid'],'safe']
+            [['uid','zip_code'],'safe']
         ]);
         switch ($this->scenario){
             case self::SCENARIO_OPT_DATA: //新增或编辑

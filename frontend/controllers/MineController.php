@@ -2,6 +2,8 @@
 namespace frontend\controllers;
 
 
+use yii\db\Expression;
+
 class MineController extends CommonController
 {
 
@@ -32,6 +34,25 @@ class MineController extends CommonController
     //个人中心
     public function actionInfo()
     {
+        if($this->request->isAjax){
+            $limit_field = ['usersname'=>'姓名','username'=>'昵称','sex'=>'','birthday'=>'生日','address'=>'地址','weixin'=>'','phone'=>'手机号码'];
+            $php_input = $this->request->post();
+            foreach($limit_field as $field=>$tip_msg){
+                if(empty($php_input[$field]) && !empty($tip_msg)){
+                    throw new \yii\base\UserException($tip_msg.'必须填写');
+                }elseif(isset($php_input[$field])){
+                    $this->user_model[$field]= $php_input[$field];
+                }
+            }
+            $bool = $this->user_model->save(false);
+            if($bool){
+                return $this->asJson(['code'=>1,'msg'=>'操作成功']);
+            }else{
+                return $this->asJson(['code'=>0,'msg'=>'操作失败']);
+            }
+
+        }
+
         return $this->render('info',[
             'user_model' => $this->user_model
         ]);
@@ -140,4 +161,121 @@ class MineController extends CommonController
     }
 
 
+
+    //我的仓库
+    public function actionWarehouse()
+    {
+        $state = $this->request->get('state',0);
+
+        return $this->render('warehouse',[
+            'state' => $state,
+        ]);
+    }
+
+
+    //我的地址
+    public function actionAddress()
+    {
+        $channel = $this->request->get('channel');
+        return $this->render('address',[
+            'channel' => $channel
+        ]);
+    }
+    //我的地址-列表
+    public function actionAddressList()
+    {
+        $query = \common\models\UserAddr::find()
+            ->where([
+                'uid'=>$this->user_id
+            ]);
+        $count = $query->count();
+        $pagination = \Yii::createObject(array_merge(\Yii::$app->components['pagination'],['totalCount' => $count]));
+        $list = $query->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->orderBy('is_default desc,id desc')
+            ->all();
+
+        $data = [];
+        foreach($list as $vo){
+            $data[] = [
+                'id'         =>  $vo['id'],
+                'username'   =>  $vo['username'],
+                'phone'      =>  substr_replace($vo['phone'],'****',3,4),
+                'is_default' => $vo['is_default'],
+                'addr'       => $vo['addr'],
+                'addr_extra' => $vo['addr_extra'],
+            ];
+        }
+
+        return $this->asJson(['code'=>1,'msg'=>'获取成功','data'=>$data,'page'=>$pagination->pageCount]);
+    }
+
+    //我的地址-新增/编辑
+    public function actionAddressAdd()
+    {
+        $id = $this->request->get('id',0);
+        $model = new \common\models\UserAddr();
+        if($this->request->isAjax){
+            $is_default = $this->request->post('is_default');
+            $php_input = $this->request->post();
+            $php_input['uid'] = $this->user_id;
+            $php_input['is_default'] = empty($is_default)?0:1;
+            $model->scenario = \common\models\UserAddr::SCENARIO_OPT_DATA;
+            $result = $model->actionSave($php_input);
+            return $this->asJson($result);
+        }
+        $model = $model::findOne($id);
+
+        return $this->render('addressAdd',[
+            'model'=>$model
+        ]);
+    }
+
+    //删除地址
+    public function actionAddressDel()
+    {
+        $id = $this->request->get('id',0);
+        $model = new \common\models\UserAddr();
+        $result = $model->actionDel(['id'=>$id,'uid'=>$this->user_id]);
+
+        return $this->asJson($result);
+    }
+
+    //用户提现
+    public function actionWithdraw()
+    {
+
+        return $this->render('withdraw',[
+
+        ]);
+    }
+
+    //分享
+    public function actionShare()
+    {
+        return $this->render('share',[
+            'user_model'  => $this->user_model,
+            'wechat_qrcode_img'  => $this->user_model->getWechatQrcode(),
+        ]);
+    }
+
+    //推荐人
+    public function actionReferee()
+    {
+        //队伍链
+        $fl_uid_all = $this->user_model['fl_uid_all'];
+        $fl_uid_all = empty($fl_uid_all)?[]:explode(',',$fl_uid_all);
+        //直推人
+        $mine_up = isset($fl_uid_all[0])?\common\models\User::findOne($fl_uid_all[0]):null;
+
+        //下级
+        $link_users = \common\models\User::find()
+            ->where(new \yii\db\Expression("find_in_set(:USER_ID,fl_uid_all)=:LEVEL",[":USER_ID"=>"$this->user_id",":LEVEL"=>"1"]))
+            ->all();
+        return $this->render('referee',[
+            'user_model'  => $this->user_model,
+            'mine_up'     => $mine_up,
+            'link_users'  => $link_users,
+        ]);
+    }
 }

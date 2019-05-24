@@ -36,7 +36,7 @@ $this->params = [
                     <tr>
                         <td rowspan="<?=count($vo['linkRoles'])+1?>"><a href="<?=\yii\helpers\Url::to(['roles-add','id'=>$vo['id']])?>"><?=$vo['name']?></a></td>
                         <td>--</td>
-                        <td><?=\common\models\SysRole::getStatusName($vo['status'])?></td>
+                        <td><?=\common\models\SysRole::getPropInfo('fields_statue',$vo['status'])?></td>
                         <td><?=$vo->updateTime?></td>
                         <td>
                             <a  class="layui-btn layui-btn-sm" href="<?=\yii\helpers\Url::to(['roles-add','id'=>$vo['id']])?>">编辑</a>
@@ -46,7 +46,7 @@ $this->params = [
                     <?php foreach($vo['linkRoles'] as $item){?>
                         <tr>
                             <td><a href="<?=\yii\helpers\Url::to(['roles-add','id'=>$item['id']])?>"><?=$item['name']?></a></td>
-                            <td><?=\common\models\SysRole::getStatusName($item['status'])?></td>
+                            <td><?=\common\models\SysRole::getPropInfo('fields_statue',$item['status'])?></td>
                             <td><?=$item->updateTime?></td>
                             <td>
                                 <a  class="layui-btn layui-btn-sm" href="<?=\yii\helpers\Url::to(['roles-add','id'=>$item['id']])?>">编辑</a>

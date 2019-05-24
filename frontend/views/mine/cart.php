@@ -62,11 +62,10 @@ $this->params = [
                  删除选中 -->
             </div>
             <input type="hidden" value="{$z_price}" class="z_price">
-            <a href="javascript:;" class="settlement" onclick="tj()">结算</a>
+            <a href="javascript:;" class="settlement" id="submit">结算</a>
             <div class="shop-total">
                 <strong>总价</strong>
                 <span class="yellow" id="total-money">￥ {$cart.0.zong_price}</span>
-                <input type="hidden" name="zong_price" id="zong_price" value="{$cart.0.zong_price}" />
             </div>
         </div>
 
@@ -114,8 +113,19 @@ $this->params = [
             }})
         })
 
-        //删除购物车
-        $("#")
+        $("#submit").click(function(){
+            var is_allow_redirect = false;
+            $(".shop-group-item input[type='checkbox']").each(function(){
+                if($(this).prop('checked')){
+                    is_allow_redirect = true;
+                }
+            })
+            if(!is_allow_redirect){
+                alert('请选择购买的商品');
+                return false;
+            }
+            window.location.href="<?=\yii\helpers\Url::to(['order/info','channel'=>'cart'])?>"
+        })
 
 
     })
@@ -127,7 +137,7 @@ $this->params = [
                 if(res.code ==1){
                     setTimeout(function(){location.reload()},1000)
                 }
-        }})
+        }},{confirm_title:"是否删除该商品"})
     }
 
     //计算价格

@@ -292,7 +292,7 @@ class SystemController extends CommonController
     public function actionNavPageDel()
     {
         $id = $this->request->get('id');
-        $model = new \common\models\SysNav();
+        $model = new \common\models\SysNavPage();
         $result = $model->actionDel(['id'=>$id]);
         return $this->asJson($result);
     }

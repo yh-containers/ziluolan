@@ -36,6 +36,7 @@ class SysNavPage extends BaseModel
             [['name'], 'required','message'=>'{attribute}必须输入'],
             ['name', 'string','length'=>[1,15],'tooLong'=>'{attribute}不得超过{max}个字符','tooShort'=>'{attribute}不得低于{min}个字符'],
 //            ['route','match','pattern'=>'/^[0-9A-Za-z\/|&=-]+$/','message'=>'路由只支持字母、数字、|&=-'],
+            ['route_alias','unique','message'=>'路由别名已存在!'],
             ['sort','number','min'=>0,'max'=>100,'tooSmall'=>'{attribute}不得低于{min}','tooBig'=>'{attribute}不得高于{max}','message'=>'{attribute}必须是数字'],
             ['sort','default','value'=>100],
             //默认值

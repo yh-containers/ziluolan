@@ -37,7 +37,7 @@ $.common={
         opt_info = opt_info?opt_info:{}
         var ajax_obj = {
             url:'',
-            method:'get',
+            type:'get',
             dataType:"json",
             data:{},
             beforeSend:function(){
@@ -55,22 +55,25 @@ $.common={
             complete:function(res,a,f){
                 if(res.status===200){
                     var responseText = res.responseText
-                    responseText = eval('(' + responseText + ')');
-                    if(responseText.hasOwnProperty('cart_num')){
-                        //监听购物车数量变化
-                        var cart_num_obj = $(".footer .item:eq(2)")
-                        if(responseText.cart_num>0){
-                            if(cart_num_obj.find('span').length){
-                                cart_num_obj.find('span').text(responseText.cart_num)
+                    if(responseText[0]==='{'){
+                        responseText = eval('(' + responseText + ')');
+                        if(responseText.hasOwnProperty('cart_num')){
+                            //监听购物车数量变化
+                            var cart_num_obj = $(".footer .item:eq(2)")
+                            if(responseText.cart_num>0){
+                                if(cart_num_obj.find('span').length){
+                                    cart_num_obj.find('span').text(responseText.cart_num)
+                                }else{
+                                    cart_num_obj.find('a').append('<span>'+responseText.cart_num+'</span>')
+                                }
                             }else{
-                                cart_num_obj.find('a').append('<span>'+responseText.cart_num+'</span>')
+                                cart_num_obj.find('span').remove()
                             }
-                        }else{
-                            cart_num_obj.find('span').remove()
+                        }else if(responseText.hasOwnProperty('url')){
+                            setTimeout(function(){window.location.href=responseText.url},1000)
                         }
-                    }else if(responseText.hasOwnProperty('url')){
-                        setTimeout(function(){window.location.href=responseText.url},1000)
                     }
+
 
                 }
                 setTimeout(function(){layer.closeAll()},1000)
@@ -88,7 +91,7 @@ $.common={
         }
 
         var req_obj = Object.assign({},ajax_obj,conf)
-        console.log(opt_info)
+        // console.log(req_obj)
         //发送ajax请求
         if(opt_info.hasOwnProperty('confirm_title')){
             layer.confirm(opt_info.confirm_title,function(){

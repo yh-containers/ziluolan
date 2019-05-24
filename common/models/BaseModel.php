@@ -39,7 +39,7 @@ class BaseModel extends ActiveRecord
         }
 
         if(is_null($key)){
-            return $data;
+            return is_null($field)?$data:'';
         }else{
             $info = isset($data[$key])?$data[$key]:[];
             return is_null($field)?$info:(isset($info[$field])?$info[$field]:'');

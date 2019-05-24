@@ -21,6 +21,8 @@ class Wechat extends BaseObject
     //开发者密码
     public $appsecret;
 
+    //缓存信息
+    const WX_ACCESS_TOKEN_CACHE_NAME = 'WX_ACCESS_TOKEN_CACHE_NAME';
 
     //获取微信授权登录信息
     public function getAuthInfo($code)
@@ -70,17 +72,14 @@ class Wechat extends BaseObject
     //获取凭证
     public function getAccessToken()
     {
-        $model_base = \common\models\Base::findOne(self::CACHE_INDEX);
-        $time = time();
-        $access_token = $model_base['access_token'];
-        if( $time > ($model_base['access_token_time']-1800) ){
+        $access_token = \Yii::$app->cache->get(self::WX_ACCESS_TOKEN_CACHE_NAME);
+        if( empty($access_token) ){
             $param = [
                 'grant_type' => 'client_credential',
                 'appid' => $this->appid,
                 'secret' => $this->appsecret,
             ];
             $result = \common\components\HttpCurl::req('https://api.weixin.qq.com/cgi-bin/token',$param);
-//            var_dump($result);exit;
             $info = json_decode($result,true);
             if(empty($info)){
                 throw new \Exception('获取access_token异常');
@@ -90,18 +89,44 @@ class Wechat extends BaseObject
                     throw new \Exception('异常:'.$info['errmsg'].' 错误代码:'.$info['errcode']);
                 }else{
                     $access_token = $info['access_token'];
-                    if(empty($model_base)){
-                        $model_base =new \common\models\Base();
-                        $model_base->id=self::CACHE_INDEX;
-                    }
-
-                    $model_base->access_token = $access_token;
-                    $model_base->access_token_time = $time+($info['expires_in']-200);
-                    $model_base->save();
+                    \Yii::$app->cache->set(self::WX_ACCESS_TOKEN_CACHE_NAME, $access_token, 6000);
                 }
             }
         }
         return $access_token;
+    }
+
+
+    /**
+     * 带参二维码
+     * @param int $scene_id 场景id值
+     * @param string $action_name 二维码模式
+     * @throws
+     * @return array|bool
+     * */
+    public  function qrcode($scene_id,$action_name='QR_SCENE')
+    {
+        $url = 'https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token='.$this->getAccessToken();
+        //{"expire_seconds": 604800, "action_name": "QR_SCENE", "action_info": {"scene": {"scene_id": 123}}}
+        $data = [
+            "action_name"   => $action_name,
+            "action_info"   => ["scene"=>[
+                "scene_id"=>$scene_id
+            ]],
+        ];
+        $json = json_encode($data);
+        $result = \common\components\HttpCurl::req($url,$json,'POST',[
+            'Content-Type: application/x-www-form-urlencoded'
+        ],true);
+
+        $result = json_decode($result,true);
+        if(isset($result['ticket'])){
+
+                return [$result['ticket'],$result['url'],$result['expire_seconds']];
+
+        }else{
+            return false;
+        }
     }
 
 

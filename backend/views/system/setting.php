@@ -166,6 +166,7 @@ $this->params = [
         <div class="box box-info">
             <div class="box-header with-border">
                 <h3 class="box-title">推荐奖金设置</h3>
+                <span class="text-red">(请设置0-1之间的数字)</span>
             </div>
             <form class="form-horizontal" action="<?= \yii\helpers\Url::to(['setting-save'])?>"  id="recommend-form">
                 <input name="<?=\Yii::$app->request->csrfParam?>" type="hidden"  value="<?= Yii::$app->request->csrfToken ?>">
@@ -228,6 +229,7 @@ $this->params = [
         <div class="box box-info">
             <div class="box-header with-border">
                 <h3 class="box-title">团队奖</h3>
+                <span class="text-red">(请设置0-1之间的数字)</span>
             </div>
             <form class="form-horizontal" action="<?= \yii\helpers\Url::to(['setting-save'])?>"  id="group-form">
                 <input name="<?=\Yii::$app->request->csrfParam?>" type="hidden"  value="<?= Yii::$app->request->csrfToken ?>">

@@ -48,6 +48,14 @@
                 </div>
             </div>
             <div class="form-group">
+                <label for="inputPassword3" class="col-sm-2 control-label">路由别名</label>
+
+                <div class="col-sm-8">
+                    <input type="text" maxlength="50" class="form-control" name="route_alias" value="<?= $model['route_alias'] ?>" placeholder="路由">
+                    <span class="help-block">路由别名:用于快速匹配路由</em></span>
+                </div>
+            </div>
+            <div class="form-group">
                 <label for="inputPassword3" class="col-sm-2 control-label">栏目属性</label>
 
                 <div class="col-sm-8">

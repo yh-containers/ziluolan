@@ -15,8 +15,12 @@ $this->params = [
 <div class="clearfix" style="height:60px;"> </div>
 <div class="main clearfix">
     <ul class="inside_nav">
-        <?php foreach ($menu['linkNavPage'] as $vo){?>
-            <li <?=$vo['id']==$id?'class="cur"':''?> ><a href="<?=\yii\helpers\Url::to(['','id'=>$vo['id']])?>"><?=$vo['name']?></a></li>
+        <?php
+            foreach ($menu['linkNavPage'] as $vo){
+                $route = \frontend\widgets\Nav::defineRoute($vo['route']);
+                $url = !is_array($route)?$route:\yii\helpers\Url::to(array_merge($route,['id'=>$vo['id']]));
+        ?>
+            <li <?=$vo['id']==$id?'class="cur"':''?> ><a href=" <?=$url?>"><?=$vo['name']?></a></li>
         <?php }?>
     </ul>
     <div class="news_content">

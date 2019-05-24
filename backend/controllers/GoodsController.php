@@ -154,42 +154,46 @@ class GoodsController extends CommonController
         }
         $model = $model::find()->with(['linkSku.linkSkuAttr','linkSkuAttrPrice'])->where(['id'=>$id])->one();
         $sku = $sku_table =$sku_temp_table = [];
-        foreach ($model['linkSku'] as $vo){
-            $info=[
-                'id' => $vo['id'],
-                'temp_id' => $vo['id'],
-                'name'=> $vo['name'],
-                'attr'=>[],
-            ];
-            foreach ($vo['linkSkuAttr'] as $attr){
-                $info['attr'][] = [
-                    'id' => $attr['id'],
-                    'temp_id' => $attr['id'],
-                    'name' => $attr['name'],
+        if(!empty($model['linkSku']) && is_array($model['linkSku'])){
+            foreach ($model['linkSku'] as $vo){
+                $info=[
+                    'id' => $vo['id'],
+                    'temp_id' => $vo['id'],
+                    'name'=> $vo['name'],
+                    'attr'=>[],
                 ];
-                $sku_temp_table[$attr['id']]=$attr['name'];
+                foreach ($vo['linkSkuAttr'] as $attr){
+                    $info['attr'][] = [
+                        'id' => $attr['id'],
+                        'temp_id' => $attr['id'],
+                        'name' => $attr['name'],
+                    ];
+                    $sku_temp_table[$attr['id']]=$attr['name'];
+                }
+                $sku[] = $info;
             }
-            $sku[] = $info;
         }
 
-        foreach ($model['linkSkuAttrPrice'] as $vo){
-            $attr = [];
-            $sku_group = empty($vo['sku_group'])?[]:explode('|',$vo['sku_group']);
-            foreach ($sku_group as $g_vo){
-                $attr[] =[
-                    'id' => $vo['id'],
-                    'temp_id' => $g_vo,
-                    'name' => isset($sku_temp_table[$g_vo]) ? $sku_temp_table[$g_vo] : '',
+        if(!empty($model['linkSkuAttrPrice']) && is_array($model['linkSkuAttrPrice'])){
+            foreach ($model['linkSkuAttrPrice'] as $vo){
+                $attr = [];
+                $sku_group = empty($vo['sku_group'])?[]:explode('|',$vo['sku_group']);
+                foreach ($sku_group as $g_vo){
+                    $attr[] =[
+                        'id' => $vo['id'],
+                        'temp_id' => $g_vo,
+                        'name' => isset($sku_temp_table[$g_vo]) ? $sku_temp_table[$g_vo] : '',
+                    ];
+                }
+
+                $sku_table[]=[
+                    'attr' => $attr,
+                    'info' => [
+                        'price' =>$vo['price'],
+                        'stock' =>$vo['stock'],
+                    ]
                 ];
             }
-
-            $sku_table[]=[
-                'attr' => $attr,
-                'info' => [
-                    'price' =>$vo['price'],
-                    'stock' =>$vo['stock'],
-                ]
-            ];
         }
 //        var_dump($sku_table);exit;
         //获取--新闻 菜单栏

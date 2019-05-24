@@ -68,7 +68,7 @@ $this->title = '紫罗兰花青素';
             });
 
 
-        </script>
+</script>
 
 
-        <?php $this->endBlock()?>
+<?php $this->endBlock()?>
