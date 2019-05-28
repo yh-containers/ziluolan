@@ -75,6 +75,7 @@ class SystemController extends CommonController
         $normal_content = json_decode($normal_content,true);
         //固定金额
         $fixed = \common\models\SysSetting::getContent('fixed');
+        $fixed = explode(',', $fixed);
         //推荐奖金设置
         $recommend = \common\models\SysSetting::getContent('recommend');
         $recommend = explode(',', $recommend);

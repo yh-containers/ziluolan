@@ -215,7 +215,7 @@ class GoodsController extends CommonController
     {
 
         $id = $this->request->get('id');
-        $model = new \common\models\Article();
+        $model = new \common\models\Goods();
         $result = $model->actionDel(['id'=>$id]);
         return $this->asJson($result);
     }

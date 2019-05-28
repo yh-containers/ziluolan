@@ -178,9 +178,73 @@ class User extends BaseModel
             UserCart::deleteAll(['uid'=>$this->id,'id'=>$ids]);
         }
     }
+    /**
+     * 团队金额增加
+     * @param double $number
+     * */
+    public function handleTeamWallet($number)
+    {
+        //增加团队金
+        $group_user = $this->getAttribute('fl_uid_all');
+        $group_user = empty($group_user)?[]:explode(',',$group_user);
+        if($number>0 && !empty($group_user)){
+            self::updateAllCounters(['team_wallet'=>$number],['id'=>$group_user]);
+        }
+    }
 
+    /**
+     * 记录用户健康豆
+     * */
+    public  function handleDepositMoney($number,$cond=false,$intro='',array $extra=[],$origin_type = 1,$is_group=0)
+    {
+        $quota = [$this->deposit_money,$number];
+        $this->updateCounters(['deposit_money'=>$number]);
+        array_push($quota,$this->getAttribute('deposit_money'));
+        //记录日志
+        UserLog::recordLog($this,1,$quota,$cond,$intro,$extra,$origin_type,$is_group);
+    }
 
-    //我的上级
+    /**
+     * 记录用户消费金豆
+     * */
+    public  function handleConsumWallet($number,$cond=false,$intro='',array $extra=[],$origin_type = 1,$is_group=0)
+    {
+        $quota = [$this->consum_wallet,$number];
+        $this->updateCounters(['consum_wallet'=>$number]);
+        array_push($quota,$this->consum_wallet);
+        //记录日志
+        UserLog::recordLog($this,2,$quota,$cond,$intro,$extra,$origin_type,$is_group);
+    }
+
+//    /**
+//     * 记录用户金豆
+//     * */
+//    public  function _setDepositMoney($number,$intro)
+//    {
+//        $this->updateCounters(['deposit_money'=>$number]);
+//    }
+//
+//    /**
+//     * 健康豆转金豆
+//     * */
+//    public  function _setDepositMoney($number,$intro)
+//    {
+//        $this->updateCounters(['deposit_money'=>$number]);
+//    }
+
+    //
+//    public function getLinkTuijian()
+//    {
+//        return $this->hasOne(self::)
+//    }
+
+    //所属门店
+    public function getLinkAdmin()
+    {
+        return $this->hasOne(SysManager::className(),['id'=>'admin_id']);
+    }
+
+    //我的上级--推荐人
     public function getLinkUserUp()
     {
         return $this->hasOne(self::className(),['tuijian_id'=>'id']);

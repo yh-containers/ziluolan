@@ -19,9 +19,9 @@ $this->params=[
         <table id="example1" class="table table-bordered table-hover">
             <thead>
             <tr>
-                <th width="80">ID</th>
-                <th width="120">创建时间</th>
-                <th width="120">订单号</th>
+                <th width="60">ID</th>
+                <th width="200">创建时间</th>
+                <th width="200">订单号</th>
                 <th width="120">会员名</th>
                 <th width="120">会员号</th>
                 <th width="120">所属门店</th>

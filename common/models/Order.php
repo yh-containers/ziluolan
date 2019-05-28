@@ -23,6 +23,9 @@ class Order extends BaseModel
     const M_ORDER_HANDLE_DEL = 'del';           //删除
     const M_ORDER_HANDLE_CANCEL = 'cancel';     //取消
 
+    //提成-健康豆与金豆比例
+    const COM_DES_PER = 0.9; //健康豆
+    const COM_CUS_PER = 0.1; //消费金豆
 //    const U_ORDER_HANDLE_WAIT_SEND = 'wait_send'; //等待发货
 
     //虚拟豆兑换比例
@@ -272,6 +275,7 @@ class Order extends BaseModel
         //优惠金额
         $model_order->dis_money = $inv_pear_dis_money; //总优惠金额
         $model_order->pay_money = $model_order->money-$model_order->dis_money; //实际支付金额
+        $model_order->need_pay_money = $model_order->pay_money + $model_order->inv_pear_dis_money; //实际支付金额+消费豆需要金额
         $model_order->freight_money = !empty($money['freight_money'])?$money['freight_money']:0.00;
         $model_order->taxation_money = !empty($money['taxation_money'])?$money['taxation_money']:0.00;
 
@@ -301,9 +305,10 @@ class Order extends BaseModel
                 $model_order_goods = new OrderGoods();
                 $model_order_goods->oid = $model_order->id;
                 $model_order_goods->gid = $vo['gid'];
-                $model_order_goods->g_mode = $vo['mode'];//分佣模式
+                $model_order_goods->g_mode = $vo['linkGoods']['mode'];//分佣模式
                 $model_order_goods->sku_id = $vo['id'];
                 $model_order_goods->price = $vo['price'];
+                $model_order_goods->pay_price = $vo['price']; //商品实际支付金额
                 $model_order_goods->num = $vo['buy_num'];
                 $model_order_goods->name = $vo['linkGoods']['name'];
                 $model_order_goods->sku_name = $vo['sku_group_name'];
@@ -476,10 +481,12 @@ class Order extends BaseModel
 
         if(empty($logistics['no']))  throw new \Exception('请输入物流单号');
         if(empty($logistics['company']))  throw new \Exception('请输入公司名称');
-
         $transaction = self::getDb()->beginTransaction();
         try{
-            $model->is_send = 2;
+            //购买者信息
+            $model_user_buy = User::findOne($model['uid']);
+            //修改发货状态
+            $model->is_send = 1;
 
             //物流
             $model_logistics = OrderLogistics::find()->where(['oid'=>$id])->limit(1)->one();
@@ -498,6 +505,45 @@ class Order extends BaseModel
             $model->receive_start_time=time();//开始收货时间
 
             $model->save(false);
+
+            //提成计算
+            list($com_money, $group_money) = $model->_commission_cal($model_user_buy);
+
+            //发放佣金--推荐/固定
+            if(!empty($com_money)){
+                foreach ($com_money as $uid=>$vo){
+                    $model_user = User::findOne($uid);
+                    $com_money_cal = empty($vo['money'])?0:$vo['money'];
+                    if(!empty($model_user)){
+                        //获得健康豆
+                        $dep_money = intval($com_money_cal*self::COM_DES_PER*100)/100;
+                        $model_user->handleDepositMoney($dep_money,$model->getAttribute('id'),'用户消费获得健康豆:'.$dep_money,$vo,1);
+                        //获得消费豆
+                        $com_money = intval($com_money_cal*self::COM_CUS_PER*100)/100;
+                        $model_user->handleConsumWallet($com_money,$model->getAttribute('id'),'用户消费获得消费豆:'.$com_money,$vo,1);
+                    }
+
+                }
+            }
+
+            //发放佣金--团队
+            if(!empty($group_money)){
+                foreach ($group_money as $uid=>$vo){
+                    $model_user = User::findOne($uid);
+                    $com_money_cal = empty($vo['money'])?0:$vo['money'];
+                    if(!empty($model_user)){
+                        //获得健康豆
+                        $dep_money = intval($com_money_cal*self::COM_DES_PER*100)/100;
+                        $model_user->handleDepositMoney($dep_money,$model->getAttribute('id'),'有用户消费获得团队奖励健康豆:'.$dep_money,$vo,1,1);
+                        //获得消费豆
+                        $com_money = intval($com_money_cal*self::COM_CUS_PER*100)/100;
+                        $model_user->handleConsumWallet($com_money,$model->getAttribute('id'),'有用户消费获得团队奖励消费豆:'.$com_money,$vo,1,1);
+                    }
+                }
+            }
+
+            //团队金增加
+            $model_user_buy->handleTeamWallet($model->getAttribute('need_pay_money'));
             $transaction->commit();
         }catch (\Exception $e){
             $transaction->rollBack();
@@ -534,36 +580,174 @@ class Order extends BaseModel
     }
 
     //提成流程
-    private function _commission_cal()
+    private function _commission_cal(User $model_user_buy)
     {
-        $user_id = $this->getAttribute('uid');
-        if(empty($user_id)){
-            return false;
+
+        if(empty($model_user_buy)){
+            return;
         }
-        //直推用户 奖金比例
+        //获取我的所有上级信息
+        //队伍链
+        $model_user_buy_link = $model_user_buy['fl_uid_all']?explode(',',$model_user_buy['fl_uid_all']):[];
+//        $model_user_buy_link = ['887','1463','4643','1297','2312','12','14','16','68','369','837'];
+        //直推用户id
+        $direct_user_id = isset($model_user_buy_link[0])?$model_user_buy_link[0]:0;
+        if(empty($direct_user_id)){
+            return;
+        }
+
+        //直推商品--用户奖金比例
         $direct_push_per = 0.1;
 
         //固定金
         $fixed = SysSetting::getContent('fixed');
-        $fixed = (is_numeric($fixed) && $fixed>0) ? $fixed : 0;
+        $fixed = empty($fixed) ? [] : array_filter(explode(',', $fixed));
         //推荐奖比例
         $recommend = SysSetting::getContent('recommend');
-        $recommend = empty($recommend) ? [] : explode(',', $recommend);
-        //团队奖
-        $group_award = SysSetting::getContent('group_award');
-        $group_award = empty($group_award) ? [] : explode(',', $group_award);
+        $recommend = empty($recommend) ? [] : array_filter(explode(',', $recommend));
+
         //获取订单商品
         $order_goods = $this->linkGoods;
 
-        //获取我发展的用户
-        //购买者用户信息
-        $model_user_buy = User::findOne($user_id);
-        //队伍链
-        $model_user_buy_link = $model_user_buy['fl_uid_all']?explode(',',$model_user_buy['fl_uid_all']):[];
-        //直推用户id
-        $direct_user_id = array_shift($model_user_buy_link);
 
 
+        //佣金信息
+        $default_com_data = $fixed_com_data  = $recommend_com_data = [
+            'money' => 0,
+            'num' => 0,
+            'data'  => []
+        ];
+
+        foreach ($order_goods as $vo) {
+            $num = $vo['num'];
+            $total_money = $vo['pay_price'] * $vo['num'];//商品实际支付价格
+            $com_data = [
+                'money' => $vo['pay_price'],//商品实际支付价格
+                'total_money' => $total_money,
+                'num' => $vo['num'],
+                'g_mode' => $vo['g_mode'],//商品模式
+            ];
+
+            if($vo['g_mode']==1){
+                //固定
+                $fixed_com_data['num']  += $num;
+                $fixed_com_data['money'] += $total_money;
+                array_push($fixed_com_data['data'],$com_data);
+
+            }elseif($vo['g_mode']==2){
+               //推荐奖
+                $recommend_com_data['num']  += $num;
+                $recommend_com_data['money'] += $total_money;
+                array_push($recommend_com_data['data'],$com_data);
+            }else{
+                //普通模式
+                $default_com_data['num']  += $num;
+                $default_com_data['money'] += $total_money;
+                array_push($default_com_data['data'],$com_data);
+            }
+        }
+        //计算佣金
+        $com_money = $group_money = [];
+        //普通商品默认提成
+        if($default_com_data['money']>0){
+            $com_money[$direct_user_id] = [
+                'money' => $default_com_data['money']*$direct_push_per, //所得佣金
+                'type'  => 0,
+                'data'  => array_merge(['sty'=>$direct_push_per],$default_com_data),
+            ];
+        }
+
+        //固定模式
+        foreach ($fixed as $key=>$gd){
+            if(isset($model_user_buy_link[$key]) && $fixed_com_data['num']>0){
+                $fixed_user_id = $model_user_buy_link[$key];
+                if(array_key_exists($fixed_user_id, $com_money)) {
+                    $com_money[$fixed_user_id]['money'] += $fixed_com_data['num']*$gd;
+                    array_push($com_money[$fixed_user_id]['data'],array_merge(['sty'=>$gd],$fixed_com_data));
+                }else{
+                    $com_money[$fixed_user_id]=[
+                        'money'   => $fixed_com_data['num']*$gd,
+                        'type'    => 1,
+                        'data'    => array_merge(['sty'=>$gd],$fixed_com_data),
+                    ];
+                }
+
+            }else{
+                //没人直接
+                break;
+            }
+        }
+        //推荐模式
+        foreach ($recommend as $key=>$gd){
+            if(isset($model_user_buy_link[$key]) && $recommend_com_data['money']>0){
+                $fixed_user_id = $model_user_buy_link[$key];
+                if(array_key_exists($fixed_user_id, $com_money)) {
+                    $com_money[$fixed_user_id]['money'] += $recommend_com_data['money']*$gd;
+                }else{
+                    $com_money[$fixed_user_id]=[
+                        'money'   => $recommend_com_data['money']*$gd,
+                        'type'    => 2,
+                        'data'    => array_merge(['sty'=>$gd],$recommend_com_data),
+                    ];
+                }
+
+            }else{
+                //没人直接
+                break;
+            }
+        }
+
+        //团队模式
+        $rev_users = array_reverse($model_user_buy_link);
+        //获取团队贡献金额
+        $group_users = User::find()->asArray()->select('id,team_wallet')->where(['id'=>$model_user_buy_link])->all();
+        $group_users = array_column($group_users,null,'id');
+        //离我最近的几个用户拿提成
+        $link_user_top_money = [];
+        foreach ($rev_users  as $vo){
+            if(isset($group_users[$vo])){
+                $link_user_top_money[$group_users[$vo]['team_wallet']] =  $group_users[$vo];
+            }
+        }
+        krsort($link_user_top_money,SORT_NUMERIC);
+
+        //处理金额key
+        $link_user_top_money= array_values($link_user_top_money);
+        $group_record_current_index = false;
+        $group_record_all_per = []; //记录所有比例
+        foreach ($link_user_top_money as $vo){
+            list($group_award_index,$group_award_per) = $this->_get_group_per($vo['team_wallet']);
+            if($group_award_index===false || $group_award_per<=0 || $group_record_current_index===$group_award_index){
+                //直接结束 //没有达到标准 比例小于0、已处理过同比例的数据
+                break;
+            }
+            //记录此次比例
+            $group_record_current_index = $group_award_index;
+            array_push($group_record_all_per,$group_award_per);
+        }
+
+        //最终团队比例
+        $group_per = [];
+        //计算比例
+        !empty($group_record_all_per) && $group_per = $this->_handle_team_per($group_record_all_per);
+
+        //处理提成
+        foreach ($link_user_top_money as $key=>$lgm){
+
+            if(isset($group_per[$key])){
+                $per = $group_per[$key];
+                $group_money[$lgm['id']]=[
+                    'money'   => $this->need_pay_money*$per,
+                    'data'    => array_merge(['sty'=>$per,'com_money'=>$this->need_pay_money],$lgm),
+                ];
+            }else{
+                break;
+            }
+
+        }
+
+
+        return [$com_money,$group_money];
     }
 
     /**
@@ -593,6 +777,83 @@ class Order extends BaseModel
         return $handle;
     }
 
+    /**
+     * 计算团队比例
+     * */
+    private function _get_group_per($team_wallet)
+    {
+        //团队奖条件倍数
+        $cond_multiple = 10000;
+
+        //团队奖
+        $group_award = SysSetting::getContent('group_award');
+        $group_award = empty($group_award) ? [] : array_filter(explode(',', $group_award));
+        $group_award_setting = SysSetting::$_GROUP_AWARD;
+
+        $team_group_index = false;
+        $team_group_per = false;
+        foreach ($group_award_setting as $cond_key=>$vo){
+            $cond = $vo['cond']; //比例
+
+            //是否有设置值
+            if(isset($group_award[$cond_key])){
+                //查看金额范围
+                if(is_array($cond)){
+                    if(count($cond)==2){
+                        if($team_wallet>=$cond[0]*$cond_multiple && $team_wallet<$cond[1]*$cond_multiple){
+                            $team_group_index = $cond_key;
+                            $team_group_per = $group_award[$cond_key];
+                            break;
+                        }
+                    }elseif(count($cond)==1){
+                        if($team_wallet >= $cond*$cond_multiple){
+                            $team_group_index = $cond_key;
+                            $team_group_per = $group_award[$cond_key];
+                            break;
+                        }
+                    }
+
+                }
+            }
+        }
+
+        return [$team_group_index,$team_group_per];
+    }
+
+    //处理比例问题
+    private function _handle_team_per(array $team_per)
+    {
+        //处理比例
+        $per = [];//最终提成比例
+        $cup_per = false;
+        $max_per = max($team_per);
+        $default_dec_step = 0;//递减比例步进值
+        foreach ($team_per as $key=>$vo){
+            if($cup_per ===false){
+                $i=1;
+                for(;;){
+                    $cup_per = $i*$vo;
+                    //获取精度
+                    if($cup_per>1){ break; }
+                    //最大执行次数
+                    if($i>10000000){ break; }
+                    $i*=10;
+                }
+                $default_dec_step = 1/$i;
+            }
+            if($default_dec_step>0){
+                if(isset($team_per[$key+1])){
+                    array_push($per,$default_dec_step);
+                    $max_per-=$default_dec_step;//递减
+                }else{
+                    //最后一个元素
+                    array_push($per,$max_per);
+                }
+            }
+        }
+        return $per;
+    }
+
     //订单地址
     public function getLinkUser()
     {
@@ -615,4 +876,11 @@ class Order extends BaseModel
     {
         return $this->hasOne(OrderLogistics::className(),['oid'=>'id']);
     }
+
+    //订单提成日志
+    public function getLinkOrderComLog()
+    {
+        return $this->hasMany(UserLog::className(),['cond'=>'id'])->where(['origin_type'=>1]);
+    }
+
 }

@@ -12,7 +12,7 @@ class Goods extends BaseModel
         ['name'=>'普通商品'],
         ['name'=>'固定奖'],
         ['name'=>'推荐奖'],
-        ['name'=>'团队奖'],
+//        ['name'=>'团队奖'],
     ];
 
 

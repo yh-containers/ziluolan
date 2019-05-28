@@ -180,6 +180,37 @@ $this->params=[
         </div>
 
     </div>
+
+    <div class="box">
+        <div class="box-header with-border">
+            <h3>提成信息</h3>
+        </div>
+        <div class="box-body">
+            <table class="layui-table"  lay-size="lg">
+                <thead>
+                <tr>
+                    <th width="150">用户名</th>
+                    <th width="80">提成金额</th>
+                    <th width="250">说明</th>
+                    <th width="120">提成时间</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <?php if(!empty($model)) foreach($model['linkOrderComLog'] as $vo){?>
+                    <tr>
+                        <td><?=$vo['linkUser']['username']?></td>
+                        <td><?=$vo['quota']?></td>
+                        <td><?=$vo['intro']?></td>
+                        <td><?=$vo['create_time']?></td>
+                    </tr>
+                <?php }?>
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
 </div>
 
 <div class="col-sm-3">
@@ -204,6 +235,7 @@ $this->params=[
         </div>
 
     </div>
+
 </div>
 
 

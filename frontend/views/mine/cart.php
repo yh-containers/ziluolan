@@ -65,7 +65,7 @@ $this->params = [
             <a href="javascript:;" class="settlement" id="submit">结算</a>
             <div class="shop-total">
                 <strong>总价</strong>
-                <span class="yellow" id="total-money">￥ {$cart.0.zong_price}</span>
+                <span class="yellow" id="total-money">￥ 0.00</span>
             </div>
         </div>
 

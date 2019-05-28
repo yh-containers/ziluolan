@@ -8,6 +8,7 @@ class OrderController extends CommonController
     public function actionIndex()
     {
 
+
         //会员模型
         $query = \common\models\Order::find();
         $count = $query->count();
@@ -29,7 +30,7 @@ class OrderController extends CommonController
     public function actionDetail()
     {
         $id = $this->request->get('id');
-        $model = \common\models\Order::find()->with(['linkUser','linkGoods','linkAddr','linkLogistics'])->where(['id'=>$id])->one();
+        $model = \common\models\Order::find()->with(['linkUser','linkGoods','linkAddr','linkLogistics','linkOrderComLog.linkUser'])->where(['id'=>$id])->one();
         //可操作
         $m_handle = [];
         $model && $m_handle = $model->getUserHandleAction('m_handle');

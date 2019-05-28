@@ -146,9 +146,45 @@ $this->params = [
                 <div class="box-body">
 
                     <div class="form-group">
-                        <label class="col-md-2 control-label">固定金额：</label>
+                        <label class="col-md-2 control-label">一级固定金额：</label>
                         <div class="col-md-10">
-                            <input type="number" class="form-control" value="<?=$fixed?>" name="content">
+                            <input type="number" class="form-control" value="<?=isset($fixed[0])?$fixed[0]:''?>" name="content[]">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">二级固定金额：</label>
+                        <div class="col-md-10">
+                            <input type="number" class="form-control" value="<?=isset($fixed[1])?$fixed[1]:''?>" name="content[]">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">三级固定金额：</label>
+                        <div class="col-md-10">
+                            <input type="number" class="form-control" value="<?=isset($fixed[2])?$fixed[2]:''?>" name="content[]">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">四级固定金额：</label>
+                        <div class="col-md-10">
+                            <input type="number" class="form-control" value="<?=isset($fixed[3])?$fixed[3]:''?>" name="content[]">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">五级固定金额：</label>
+                        <div class="col-md-10">
+                            <input type="number" class="form-control" value="<?=isset($fixed[4])?$fixed[4]:''?>" name="content[]">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">六级固定金额：</label>
+                        <div class="col-md-10">
+                            <input type="number" class="form-control" value="<?=isset($fixed[5])?$fixed[5]:''?>" name="content[]">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">七级固定金额：</label>
+                        <div class="col-md-10">
+                            <input type="number" class="form-control" value="<?=isset($fixed[6])?$fixed[6]:''?>" name="content[]">
                         </div>
                     </div>
 
@@ -235,50 +271,17 @@ $this->params = [
                 <input name="<?=\Yii::$app->request->csrfParam?>" type="hidden"  value="<?= Yii::$app->request->csrfToken ?>">
                 <input type="hidden" name="type"  value="group_award" />
                 <div class="box-body">
-
+                    <?php
+                        foreach(\common\models\SysSetting::$_GROUP_AWARD as $key=>$vo) {
+                    ?>
                     <div class="form-group">
-                        <label class="col-md-2 control-label">一级：</label>
+                        <label class="col-md-2 control-label"><?=implode('-',isset($vo['show_cond'])?$vo['show_cond']:$vo['cond'])?>W：</label>
                         <div class="col-md-10">
-                            <input type="text" class="form-control" value="<?=isset($group_award[0])?$group_award[0]:''?>" name="content[]">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-md-2 control-label">二级：</label>
-                        <div class="col-md-10">
-                            <input type="text" class="form-control" value="<?=isset($group_award[1])?$group_award[1]:''?>" name="content[]">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-md-2 control-label">三级：</label>
-                        <div class="col-md-10">
-                            <input type="text" class="form-control" value="<?=isset($group_award[2])?$group_award[2]:''?>" name="content[]">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-md-2 control-label">四级：</label>
-                        <div class="col-md-10">
-                            <input type="text" class="form-control" value="<?=isset($group_award[3])?$group_award[3]:''?>" name="content[]">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-md-2 control-label">五级：</label>
-                        <div class="col-md-10">
-                            <input type="text" class="form-control" value="<?=isset($group_award[4])?$group_award[4]:''?>" name="content[]">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-md-2 control-label">六级：</label>
-                        <div class="col-md-10">
-                            <input type="text" class="form-control" value="<?=isset($group_award[5])?$group_award[5]:''?>" name="content[]">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-md-2 control-label">七级：</label>
-                        <div class="col-md-10">
-                            <input type="text" class="form-control" value="<?=isset($group_award[6])?$group_award[6]:''?>" name="content[]">
+                            <input type="text" class="form-control" value="<?=isset($group_award[$key])?$group_award[$key]:''?>" name="content[]">
                         </div>
                     </div>
 
+                    <?php }?>
                     <div class="form-group">
                         <div class="col-md-offset-2 col-md-10">
                             <input type="button" class="btn btn-block btn-primary btn-flat" value=" 提交 "  id="submit"  onclick="$.common.formSubmit($('#group-form'),1)"/>

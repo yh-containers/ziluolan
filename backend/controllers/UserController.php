@@ -53,7 +53,11 @@ class UserController extends CommonController
         $count = $query->count();
         $pagination = \Yii::createObject(array_merge(\Yii::$app->components['pagination'],['totalCount'=>$count]));
         $list = $query
-            ->offset($pagination->offset)->limit($pagination->limit)->orderBy("id desc")->all();
+            ->with(['linkAdmin','linkUserUp'])
+            ->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->orderBy("id desc")
+            ->all();
 
 
         return $this->render('index',[

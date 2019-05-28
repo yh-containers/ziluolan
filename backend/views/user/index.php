@@ -19,25 +19,25 @@ $this->params=[
         <table id="example1" class="table table-bordered table-hover">
             <thead>
             <tr>
-                <th width="5%">ID</th>
-                <th width="5%">会员号</th>
-                <th width="10%">微信名称</th>
-                <th width="3%">等级</th>
+                <th width="40">ID</th>
+                <th width="80">会员号</th>
+                <th width="100">微信名称</th>
+                <th width="80">等级</th>
 
-                <th width="5%">所属门店</th>
-                <th width="5%">推荐人</th>
-                <th width="5%">节点推荐人</th>
+                <th width="120">所属门店</th>
+                <th width="120">推荐人</th>
+                <th width="120">节点推荐人</th>
 
-                <th width="5%">预存押金</th>
-                <th width="5%">健康豆</th>
-                <th width="5%">钱包金额</th>
-                <th width="5%">消费金豆</th>
-                <th width="5%">团队业绩</th>
-                <th width="5%">团队提成</th>
+                <th width="100">预存押金</th>
+                <th width="100">健康豆</th>
+                <th width="100">钱包金额</th>
+                <th width="100">消费金豆</th>
+                <th width="100">团队业绩</th>
+                <th width="100">团队提成</th>
 
 
                 <!-- <th width="5%">老客户</th> -->
-                <th width="15%">详细</th>
+                <th width="200">详细</th>
             </tr>
             </thead>
             <tbody>
@@ -46,6 +46,9 @@ $this->params=[
                     <th><?=$vo['id']?></th>
                     <th><?=$vo['number']?></th>
                     <th><?=$vo['username']?></th>
+                    <th>等级</th>
+                    <th><?=$vo['linkAdmin']['name']?></th>
+                    <th><?=$vo['linkUserUp']['number']?></th>
 
 
                 </tr>
