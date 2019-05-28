@@ -69,11 +69,22 @@ class UserController extends CommonController
     public function actionDetail()
     {
         $id = $this->request->get('id');
-        $model = \common\models\Member::findOne($id);
+        $model = \common\models\User::findOne($id);
         return  $this->render('detail',[
             'model'=>$model
         ]);
     }
+
+    //
+    public function actionAdd()
+    {
+        $id = $this->request->get('id');
+        $model = \common\models\User::findOne($id);
+        return $this->render('add',[
+            'model'=>$model
+        ]);
+    }
+
 
 
     //修改推荐人

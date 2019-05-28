@@ -10,6 +10,7 @@ class UserLog extends BaseModel
         ['name'=>'其它',],
         ['name'=>'健康豆','field'=>'deposit_money'],
         ['name'=>'消费金豆','field'=>'consum_wallet'],
+        ['name'=>'团队提成','field'=>'team_wallet'],
     ];
 
     public static $fields_origin_type = [
@@ -30,6 +31,7 @@ class UserLog extends BaseModel
      * @param bool|int //变动的条件-关联条件
      * @param string 说明
      * @param array 拓展数据
+     * @param int $origin_type 来源类型 0其它 1订单
      * @param int $is_group 是否为团队奖励
      *
      * */

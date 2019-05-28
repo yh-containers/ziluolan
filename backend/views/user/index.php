@@ -26,17 +26,11 @@ $this->params=[
 
                 <th width="120">所属门店</th>
                 <th width="120">推荐人</th>
-                <th width="120">节点推荐人</th>
-
-                <th width="100">预存押金</th>
                 <th width="100">健康豆</th>
                 <th width="100">钱包金额</th>
                 <th width="100">消费金豆</th>
                 <th width="100">团队业绩</th>
                 <th width="100">团队提成</th>
-
-
-                <!-- <th width="5%">老客户</th> -->
                 <th width="200">详细</th>
             </tr>
             </thead>
@@ -46,11 +40,21 @@ $this->params=[
                     <th><?=$vo['id']?></th>
                     <th><?=$vo['number']?></th>
                     <th><?=$vo['username']?></th>
-                    <th>等级</th>
+                    <th><?=\common\models\User::getPropInfo('fields_consume_type',$vo['consume_type'],'name')?></th>
                     <th><?=$vo['linkAdmin']['name']?></th>
                     <th><?=$vo['linkUserUp']['number']?></th>
-
-
+                    <th><?=$vo['deposit_money']?></th>
+                    <th><?=$vo['wallet']?></th>
+                    <th><?=$vo['consum_wallet']?></th>
+                    <th><?=$vo['team_wallet_full']?></th>
+                    <th><?=$vo['team_wallet']?></th>
+                    <th>
+                        <a href="<?=\yii\helpers\Url::to(['detail','id'=>$vo['id']])?>" class="btn btn-xs btn-default">详细</a>
+                        <a href="<?=\yii\helpers\Url::to(['add','id'=>$vo['id']])?>" class="btn btn-xs btn-warning">编辑</a>
+                        <a href="<?=\yii\helpers\Url::to(['order/index','id'=>$vo['id']])?>" class="btn btn-xs btn-primary">订单</a>
+                        <a href="<?=\yii\helpers\Url::to(['finance/index','id'=>$vo['id']])?>" class="btn btn-xs btn-info">流水</a>
+                        <a href="<?=\yii\helpers\Url::to(['del','id'=>$vo['id']])?>" class="btn btn-xs btn-danger">删除</a>
+                    </th>
                 </tr>
             <?php }?>
             </tbody>

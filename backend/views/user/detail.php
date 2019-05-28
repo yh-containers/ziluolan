@@ -6,64 +6,221 @@ $this->params=[
 <?php $this->beginBlock('style')?>
 
 <style type="text/css">
-    #foonav{ display:none !important;}
-    #foonav2{ display:none !important;}
-
+.layui-table[lay-size=lg] td,.layui-table[lay-size=lg] th{padding: 12px 10px; }
+.box-body>a{margin: 5px 2px;}
 </style>
 <?php $this->endBlock()?>
 <?php $this->beginBlock('content')?>
-<div class="box">
-    <div class="box-header">
-        <h3 class="box-title">用户:<?=$model['username']?> 会员号:<?=$model['number']?></h3>
-        <a href='<?=\yii\helpers\Url::to(['index'])?>' class="btn btn-primary" onclick="">返回</a>
-    </div>
-    <div class="box-body">
-        <ul class="nav nav-tabs">
-            <li class="active"><a href="#home" data-toggle="tab">详细信息</a></li>
 
-        </ul>
-        <div id="myTabContent" class="tab-content">
-            <div class="tab-pane fade active in" id="home">
-                <div class="box-body">
-                    <table id="example" class="table table-bordered table-hover">
+<div class="row">
+    <div class="col-sm-8">
+        <div class="box box-solid">
+            <div class="box-header with-border">
+                <h3 class="box-title">用户基本资料</h3>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body">
+                <table class="layui-table" lay-size="lg">
+                    <colgroup>
+                        <col width="150">
+                        <col width="190">
+                        <col width="150">
+                        <col width="190">
+                        <col width="150">
+                        <col width="190">
+                        <col width="150">
+                        <col width="190">
+                    </colgroup>
+                    <tbody>
+                    <tr>
+                        <td>会员号</td>
+                        <td></td>
+                        <td>真实姓名</td>
+                        <td></td>
+                        <td>性别</td>
+                        <td></td>
+                        <td>所属门店</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>微信名称</td>
+                        <td></td>
+                        <td>等级</td>
+                        <td></td>
+                        <td>生日</td>
+                        <td></td>
+                        <td>手机号</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>城市</td>
+                        <td></td>
+                        <td>微信号</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>推荐人</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>健康豆</td>
+                        <td></td>
+                        <td>金豆</td>
+                        <td></td>
+                        <td>消费金豆</td>
+                        <td></td>
+                        <td>钱包金额</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>团队业绩</td>
+                        <td></td>
+                        <td>团队提成</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>购买次数</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>注册时间</td>
+                        <td></td>
+                        <td>最近登录</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- /.box-body -->
+        </div>
+
+
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">收货地址</h3>
+                </div>
+                <!-- /.box-header -->
+                <div class="box-body text-center">
+                    <table class="layui-table" lay-size="lg">
                         <thead>
                         <tr>
-                            <th width="5%">真实姓名</th>
-                            <th width="5%">性别</th>
-                            <th width="5%">生日</th>
-                            <th width="10%">城市</th>
-                            <th width="5%">微信号</th>
-                            <th width="5%">手机号</th>
-                            <th width="5%">身份证</th>
-                            <th width="10%">注册时间</th>
-                            <th width="10%">最近登录</th>
-                            <th width="5%">购买数</th>
-
+                            <th>收货人名</th>
+                            <th>电话</th>
+                            <th>地址</th>
+                            <th>邮编</th>
+                            <th>更新时间</th>
                         </tr>
                         </thead>
                         <tbody>
-
                         <tr>
-                            <th><?=$model['username']?></th>
-                            <th><?=\common\models\Member::getSex($model['sex'])?></th>
-                            <th><?=$model['username']?></th>
-                            <th><?=$model['username']?></th>
-                            <th><?=$model['username']?></th>
-                            <th><?=$model['username']?></th>
-                            <th><?=empty($model['idcard'])?'未上传':'<a href="'.$model['idcard'].'" class="label label-primary" target="_blank">点击查看正面</a>'?></th>
-                            <th><?=$model['dl_addtime']?date('Y-m-d H:i',$model['addtime']):''?></th>
-                            <th><?=$model['dl_addtime']?date('Y-m-d H:i',$model['dl_addtime']):''?></th>
-                            <td><?=$model['integral']?></td>
-
-
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                         </tr>
-
                         </tbody>
                     </table>
                 </div>
+                <!-- /.box-body -->
             </div>
 
+        <div class="col-sm-6">
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">银行卡</h3>
+                </div>
+                <!-- /.box-header -->
+                <div class="box-body text-center">
+                    <table class="layui-table" lay-size="lg">
+                        <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>开户行</th>
+                            <th>卡号</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.box-body -->
+            </div>
         </div>
+        <div class="col-sm-6">
+            <div class="box box-solid">
+                <div class="box-header with-border">
+                    <h3 class="box-title">我推荐的用户</h3>
+                </div>
+                <!-- /.box-header -->
+                <div class="box-body text-center">
+                    <table class="layui-table" lay-size="lg">
+                        <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>开户行</th>
+                            <th>卡号</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.box-body -->
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-4">
+        <div class="box box-solid">
+            <div class="box-header with-border">
+                <h3 class="box-title">操作</h3>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body">
+
+            </div>
+            <!-- /.box-body -->
+        </div>
+
+
+        <div class="box box-solid">
+            <div class="box-header with-border">
+                <h3 class="box-title">近期流水信息</h3>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body">
+
+            </div>
+            <!-- /.box-body -->
+        </div>
+
     </div>
 </div>
 
@@ -75,14 +232,7 @@ $this->params=[
 <?php $this->beginBlock('script')?>
 <script>
 
-    function partner(id,partner){
-        $("#id").val(id);
-        $("#sp_name").val(partner);
-        $("#expre").addClass('show1');
-    }
-    function t_fh_off(_this){
-        $("#expre").removeClass('show1');
-    }
+
 
 </script>
 <?php $this->endBlock()?>

@@ -531,6 +531,8 @@ class Order extends BaseModel
                 foreach ($group_money as $uid=>$vo){
                     $model_user = User::findOne($uid);
                     $com_money_cal = empty($vo['money'])?0:$vo['money'];
+                    //获得健康豆
+                    $model_user->handleDepositMoney($com_money_cal,$model->getAttribute('id'),'有用户消费获得团队提成增加:'.$com_money_cal,$vo,1);
                     if(!empty($model_user)){
                         //获得健康豆
                         $dep_money = intval($com_money_cal*self::COM_DES_PER*100)/100;

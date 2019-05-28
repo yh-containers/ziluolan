@@ -12,6 +12,12 @@ class User extends BaseModel
         return '{{%user}}';
     }
 
+    public static $fields_consume_type = [
+        [],
+        ['name'=>'C级','con'=>[1]],
+        ['name'=>'P级','con'=>[300000]],
+        ['name'=>'S级','con'=>[3000000]],
+    ];
 
     //获取用户微信推广二维码
     public function getWechatQrcode()
@@ -182,14 +188,31 @@ class User extends BaseModel
      * 团队金额增加
      * @param double $number
      * */
-    public function handleTeamWallet($number)
+    public function handleTeamWalletFull($number)
     {
         //增加团队金
         $group_user = $this->getAttribute('fl_uid_all');
         $group_user = empty($group_user)?[]:explode(',',$group_user);
         if($number>0 && !empty($group_user)){
-            self::updateAllCounters(['team_wallet'=>$number],['id'=>$group_user]);
+            self::updateAllCounters(['team_wallet_full'=>$number],['id'=>$group_user]);
         }
+    }
+
+    /**
+     * 团队个人金额增加
+     * @param double $number
+     * */
+    public function handleTeamWallet($number,$cond=false,$intro='',array $extra=[],$origin_type = 1)
+    {
+        //增加团队金
+        if($number>0){
+            $quota = [$this->team_wallet,$number];
+            $this->updateCounters(['team_wallet'=>$number]);
+            array_push($quota,$this->getAttribute('team_wallet'));
+            //记录日志
+            UserLog::recordLog($this,3,$quota,$cond,$intro,$extra,$origin_type,1);
+        }
+
     }
 
     /**
