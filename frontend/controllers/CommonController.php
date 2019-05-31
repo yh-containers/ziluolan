@@ -8,7 +8,7 @@ class CommonController extends Controller
 {
     public $user_id = 0;
 
-    public $is_need_login = false;
+    public $is_need_login = true;
     protected $ignore_action = '';
 
 
@@ -21,14 +21,16 @@ class CommonController extends Controller
 
     public function init()
     {
+        parent::init();
         $this->request = \Yii::$app->request;
-
-        if(\Yii::$app->session->has(\common\models\User::USER_SESSION_LOGIN)){
-            $user_info = \Yii::$app->session->get(\common\models\User::USER_SESSION_LOGIN);
+        if(\Yii::$app->session->has(\common\models\User::USER_SESSION_LOGIN_INFO)){
+            $user_info = \Yii::$app->session->get(\common\models\User::USER_SESSION_LOGIN_INFO);
             $this->user_id = empty($user_info['user_id'])?0:$user_info['user_id'];
+            if(empty($this->user_id)){
+                //销毁session存在的数据
+                \Yii::$app->session->remove(\common\models\User::USER_SESSION_LOGIN_INFO);
+            }
         }
-
-        return parent::init();
     }
 
     public function beforeAction($action)
@@ -40,14 +42,14 @@ class CommonController extends Controller
                     //需要登录才能访问
                     \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
                     \Yii::$app->response->data = array(
-                        'code' => 0,
+                        'code' => -1,
                         'msg' => '请先登录',
-                        'url' => \yii\helpers\Url::to(['index/login'])
+                        'url' => \yii\helpers\Url::to(['index/index'])
                     );
                     return false;
                 }else{
                     //需要登录才能访问
-                    $this->redirect(\yii\helpers\Url::to(['index/login']));
+                    $this->redirect(\yii\helpers\Url::to(['index/index']));
                     return false;
                 }
             }

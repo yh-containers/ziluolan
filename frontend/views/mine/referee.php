@@ -28,7 +28,7 @@ $this->params = [
 
         </ul>
     </div>
-    <?php if(!empty($link_users))  {?>
+    <?php if(!empty($mine_up))  {?>
     <div class="pick">
         <div class="wrap clearfix">
             <ul class="clearfix">

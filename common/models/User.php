@@ -8,7 +8,7 @@ class User extends BaseModel
 {
     use SoftDelete;
     //微信登录
-    const USER_SESSION_LOGIN = 1;
+    const USER_SESSION_LOGIN_INFO = 'USER_SESSION_LOGIN_INFO';
 
     public static function tableName()
     {
@@ -35,26 +35,44 @@ class User extends BaseModel
         if(empty($wx_auth_info)){
             return null;
         }
-
-        $model = self::find()->where(['openid'=>$wx_auth_info['openid']])->one();
+//        var_dump($wx_auth_info);
+        $model = self::find()->where(['open_id'=>$wx_auth_info['openid']])->one();
         if(empty($model)){
             //注册微信用户
             $model = new self();
-            !empty($wx_info['nickname']) && $model->setAttribute('username',$wx_info['nickname']);
-            !empty($wx_info['sex']) && $model->setAttribute('sex',$wx_info['sex']);
-            !empty($wx_info['headimgurl']) && $model->setAttribute('image',$wx_info['headimgurl']);
-            !empty($wx_info['openid']) && $model->setAttribute('openid',$wx_info['openid']);
-//            !empty($wx_info['access_token']) && $model->setAttribute('wx_access_token',$wx_info['access_token']);
-//            !empty($wx_info['refresh_token']) && $model->setAttribute('refresh_token',$wx_info['refresh_token']);
+            !empty($wx_auth_info['nickname']) && $model->username = $wx_auth_info['nickname'];
+            !empty($wx_auth_info['sex']) &&  $model->sex = $wx_auth_info['sex'];
+            !empty($wx_auth_info['headimgurl']) && $model->image = $wx_auth_info['headimgurl'];
+            if(!empty($wx_auth_info['openid'])){
+                $model->open_id = $wx_auth_info['openid'];
+                //验证用户是否有邀请者
+                $sub_model = \common\models\WechatSubscribe::find()->with(['linkReqUser'])->where(['openid'=>$model->open_id])->orderBy('id desc')->one();
+                if($sub_model && $sub_model['req_user_id']){
+                    //邀请者
+                    $model->tuijian_id = $sub_model['req_user_id'];
+                    //邀请者-队伍链
+                    $fl_uid_all = $model->tuijian_id;
+                    if(!empty($sub_model['linkReqUser']) && !empty($sub_model['linkReqUser']['fl_uid_all'])){
+                        $fl_uid_all.=','.$sub_model['linkReqUser']['fl_uid_all'];
+                    }
+                    //保存队伍链
+                    $model->fl_uid_all = $fl_uid_all;
+                }
+            }
+//            !empty($wx_auth_info['access_token']) && $model->setAttribute('wx_access_token',$wx_auth_info['access_token']);
+//            !empty($wx_auth_info['refresh_token']) && $model->setAttribute('refresh_token',$wx_auth_info['refresh_token']);
+
+
         }
+//        var_dump($model->getAttributes());exit;
         //保存数据
         $model->save(false);
         $user_id = $model->getAttribute('id');
-        if($model->getAttribute('number') && $user_id){
+        if(!$model->getAttribute('number') && $user_id){
             //会员编号
             $number = 100000 + $user_id;
-            $model->setAttribute('number','A'.$number);
-            $model->save(false);
+            $model->number='A'.$number;
+            $model->save();
         }
         return $model;
     }
@@ -71,7 +89,10 @@ class User extends BaseModel
            return false;
         }
         //保存session 会话
-        \Yii::$app->session->set(self::USER_SESSION_LOGIN,[
+        $session = \Yii::$app->session;
+        $session->isActive || $session->open();
+
+        $session->set(self::USER_SESSION_LOGIN_INFO,[
             'user_id' => $this->getAttribute('id'),
         ]);
         return true;
@@ -86,8 +107,9 @@ class User extends BaseModel
             try{
                 $wechat = \Yii::createObject(\Yii::$app->components['wechat']);
                 //永久二维码
-                list($ticket,$wechat_qrcode_img) = $wechat->qrcode($this->getAttribute('id'),'QR_LIMIT_SCENE');
-                if(!empty($wechat_qrcode_img)){
+                list($ticket,$url) = $wechat->qrcode($this->getAttribute('id'),'QR_LIMIT_SCENE');
+                if(!empty($ticket)){
+                    $wechat_qrcode_img = 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket='.urlencode($ticket);
                     //保存二维码
                     $this->wechat_qrcode_img=$wechat_qrcode_img;
                     $this->save(false);
@@ -296,6 +318,41 @@ class User extends BaseModel
         array_push($quota,$this->consum_wallet);
         //记录日志
         UserLog::recordLog($this,2,$quota,$cond,$intro,$extra,$origin_type,$is_group);
+    }
+
+
+    /**
+     * 自动添加时间戳，序列化参数
+     * @return array
+     */
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        //开启软删除
+        $behaviors['softDeleteBehavior'] = [
+            'class' => \yii2tech\ar\softdelete\SoftDeleteBehavior::className(),
+            'softDeleteAttributeValues' => [
+                self::getSoftDeleteField() => time(),
+            ],
+            'replaceRegularDelete' => true // mutate native `delete()` method
+        ];
+
+
+        return $behaviors;
+    }
+
+    public function rules()
+    {
+        $rule = parent::rules(); // TODO: Change the autogenerated stub
+        $rule = array_merge($rule,[
+            ['type','default','value'=>1],
+            ['admin_id','default','value'=>1],
+            ['sex','default','value'=>0],
+            ['consume_type','default','value'=>0],
+            ['tuijian_id','default','value'=>0], //推荐用户id
+            ['image','default','value'=>'/assets/images/default.jpg'],
+        ]);
+        return $rule;
     }
 
 //    /**

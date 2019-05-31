@@ -122,7 +122,7 @@ class Wechat extends BaseObject
         $result = json_decode($result,true);
         if(isset($result['ticket'])){
 
-                return [$result['ticket'],$result['url'],$result['expire_seconds']];
+                return [$result['ticket'],$result['url'],isset($result['expire_seconds'])?$result['expire_seconds']:false];
 
         }else{
             return false;

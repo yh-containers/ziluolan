@@ -87,13 +87,13 @@ $this->params = [
         </div>
 
 
-        <div class="list clearfix">
+        <!--<div class="list clearfix">
             <ul>
                 <li class="clearfix">
-                    <div class="left fl"><i class="i10"></i><a href="<?=\yii\helpers\Url::to(['index/logout'])?>">注销登录</a></div>
+                    <div class="left fl"><i class="i10"></i><a href="<?/*=\yii\helpers\Url::to(['index/logout'])*/?>">注销登录</a></div>
 
             </ul>
-        </div>
+        </div>-->
 
     </div>
 

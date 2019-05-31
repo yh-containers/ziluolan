@@ -25,7 +25,6 @@ class MineController extends CommonController
 
     public function actionIndex()
     {
-
         return $this->render('index',[
             'user_model' => $this->user_model
         ]);
@@ -262,16 +261,12 @@ class MineController extends CommonController
     //推荐人
     public function actionReferee()
     {
-        //队伍链
-        $fl_uid_all = $this->user_model['fl_uid_all'];
-        $fl_uid_all = empty($fl_uid_all)?[]:explode(',',$fl_uid_all);
+
         //直推人
-        $mine_up = isset($fl_uid_all[0])?\common\models\User::findOne($fl_uid_all[0]):null;
+        $mine_up = $this->user_model->linkUserUp;
 
         //下级
-        $link_users = \common\models\User::find()
-            ->where(new \yii\db\Expression("find_in_set(:USER_ID,fl_uid_all)=:LEVEL",[":USER_ID"=>"$this->user_id",":LEVEL"=>"1"]))
-            ->all();
+        $link_users = $this->user_model->getLinkChild()->all();
         return $this->render('referee',[
             'user_model'  => $this->user_model,
             'mine_up'     => $mine_up,
