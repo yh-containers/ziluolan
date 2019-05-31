@@ -9,11 +9,14 @@ $params = array_merge(
 return [
     'id' => 'app-frontend1111',
     'basePath' => dirname(__DIR__),
-    'bootstrap' => ['log'],
+    'bootstrap' => ['log','checkWxLogin'],
     'controllerNamespace' => 'frontend\controllers',
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-frontend',
+        ],
+        'checkWxLogin'=>[
+            'class' => 'frontend\components\CheckWxLogin',
         ],
         'user' => [
             'identityClass' => 'common\models\User',

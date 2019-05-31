@@ -7,10 +7,15 @@ use yii\db\ActiveRecord;
 class User extends BaseModel
 {
     use SoftDelete;
+    //微信登录
+    const USER_SESSION_LOGIN = 1;
+
     public static function tableName()
     {
         return '{{%user}}';
     }
+
+    public static $fields_sex = ['未知','男','女','保密'];
 
     public static $fields_consume_type = [
         [],
@@ -18,6 +23,60 @@ class User extends BaseModel
         ['name'=>'P级','con'=>[300000]],
         ['name'=>'S级','con'=>[3000000]],
     ];
+
+    /**
+     * 检测用户微信登录信息
+     * @return null|self
+     * */
+    public static function checkWxLoginInfo()
+    {
+        //获取微信认证信息
+        $wx_auth_info = \Yii::$app->session->get(\common\components\Wechat::WX_AUTH_USER_INFO);
+        if(empty($wx_auth_info)){
+            return null;
+        }
+
+        $model = self::find()->where(['openid'=>$wx_auth_info['openid']])->one();
+        if(empty($model)){
+            //注册微信用户
+            $model = new self();
+            !empty($wx_info['nickname']) && $model->setAttribute('username',$wx_info['nickname']);
+            !empty($wx_info['sex']) && $model->setAttribute('sex',$wx_info['sex']);
+            !empty($wx_info['headimgurl']) && $model->setAttribute('image',$wx_info['headimgurl']);
+            !empty($wx_info['openid']) && $model->setAttribute('openid',$wx_info['openid']);
+//            !empty($wx_info['access_token']) && $model->setAttribute('wx_access_token',$wx_info['access_token']);
+//            !empty($wx_info['refresh_token']) && $model->setAttribute('refresh_token',$wx_info['refresh_token']);
+        }
+        //保存数据
+        $model->save(false);
+        $user_id = $model->getAttribute('id');
+        if($model->getAttribute('number') && $user_id){
+            //会员编号
+            $number = 100000 + $user_id;
+            $model->setAttribute('number','A'.$number);
+            $model->save(false);
+        }
+        return $model;
+    }
+
+
+    /**
+     * 用户登录
+     * @return bool
+     * */
+    public function handleLogin()
+    {
+        $user_id = $this->getAttribute('id');
+        if(empty($user_id)){
+           return false;
+        }
+        //保存session 会话
+        \Yii::$app->session->set(self::USER_SESSION_LOGIN,[
+            'user_id' => $this->getAttribute('id'),
+        ]);
+        return true;
+
+    }
 
     //获取用户微信推广二维码
     public function getWechatQrcode()
@@ -270,7 +329,34 @@ class User extends BaseModel
     //我的上级--推荐人
     public function getLinkUserUp()
     {
-        return $this->hasOne(self::className(),['tuijian_id'=>'id']);
+        return $this->hasOne(self::className(),['id'=>'tuijian_id']);
+    }
+    //我推荐的人
+    public function getLinkChild()
+    {
+        return $this->hasMany(self::className(),['tuijian_id'=>'id']);
+    }
+
+    //我的上级--推荐人
+    public function getLinkOrderCount()
+    {
+        return $this->hasOne(Order::className(),['uid'=>'id'])->select(['uid','order_num'=>'count(*)'])->groupBy('uid');
+    }
+
+    //用户收货地址
+    public function getLinkRecAddr()
+    {
+        return $this->hasMany(UserAddr::className(),['uid'=>'id'])->orderBy('is_default desc,id desc');
+    }
+    //银行卡
+    public function getLinkBankCard()
+    {
+        return $this->hasMany(UserBankCard::className(),['uid'=>'id']);
+    }
+    //用户消费记录
+    public function getLinkUserLog()
+    {
+        return $this->hasMany(UserLog::className(),['uid'=>'id']);
     }
 
 }

@@ -10,7 +10,7 @@ class Order extends BaseModel
     use SoftDelete;
     public $check_channel = false;
     public $channel_g_data;//渠道数据
-
+    public $order_num = 0;
     //用户可操作常量
     const U_ORDER_HANDLE_PAY = 'pay';           //订单支付
     const U_ORDER_HANDLE_CANCEL = 'cancel';     //取消订单

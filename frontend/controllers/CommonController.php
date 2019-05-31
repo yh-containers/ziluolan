@@ -6,7 +6,7 @@ use yii\web\Controller;
 
 class CommonController extends Controller
 {
-    public $user_id = 6806;
+    public $user_id = 0;
 
     public $is_need_login = false;
     protected $ignore_action = '';
@@ -23,11 +23,9 @@ class CommonController extends Controller
     {
         $this->request = \Yii::$app->request;
 
-        $user_info = \Yii::$app->session->get('user_info');
-        if(!empty($user_info)){
+        if(\Yii::$app->session->has(\common\models\User::USER_SESSION_LOGIN)){
+            $user_info = \Yii::$app->session->get(\common\models\User::USER_SESSION_LOGIN);
             $this->user_id = empty($user_info['user_id'])?0:$user_info['user_id'];
-
-
         }
 
         return parent::init();

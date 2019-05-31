@@ -53,7 +53,7 @@ class UserController extends CommonController
         $count = $query->count();
         $pagination = \Yii::createObject(array_merge(\Yii::$app->components['pagination'],['totalCount'=>$count]));
         $list = $query
-            ->with(['linkAdmin','linkUserUp'])
+            ->with(['linkAdmin','linkUserUp','linkOrderCount'])
             ->offset($pagination->offset)
             ->limit($pagination->limit)
             ->orderBy("id desc")
@@ -69,7 +69,13 @@ class UserController extends CommonController
     public function actionDetail()
     {
         $id = $this->request->get('id');
-        $model = \common\models\User::findOne($id);
+        $model = \common\models\User::find()
+            ->with(['linkAdmin','linkUserUp','linkOrderCount','linkRecAddr','linkChild','linkBankCard','linkUserLog'=>function($query){
+                return $query->limit(10)->orderBy('id desc');
+            }])
+            ->where(['id'=>$id])
+            ->one();
+
         return  $this->render('detail',[
             'model'=>$model
         ]);
