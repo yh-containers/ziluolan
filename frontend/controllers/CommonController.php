@@ -7,6 +7,7 @@ use yii\web\Controller;
 class CommonController extends Controller
 {
     public $user_id = 0;
+    public $wx_open_id = '';//当前微信登录openid
 
     public $is_need_login = true;
     protected $ignore_action = '';
@@ -23,7 +24,8 @@ class CommonController extends Controller
     {
         parent::init();
         $this->request = \Yii::$app->request;
-        if(\Yii::$app->session->has(\common\models\User::USER_SESSION_LOGIN_INFO)){
+        $session = \Yii::$app->session;
+        if($session->has(\common\models\User::USER_SESSION_LOGIN_INFO)){
             $user_info = \Yii::$app->session->get(\common\models\User::USER_SESSION_LOGIN_INFO);
             $this->user_id = empty($user_info['user_id'])?0:$user_info['user_id'];
             if(empty($this->user_id)){
@@ -31,12 +33,27 @@ class CommonController extends Controller
                 \Yii::$app->session->remove(\common\models\User::USER_SESSION_LOGIN_INFO);
             }
         }
+        //微信授权登录信息
+        if($session->has(\common\components\Wechat::WX_AUTH_USER_INFO)){
+            $wx_auth_info =$session->get(\common\components\Wechat::WX_AUTH_USER_INFO);
+            !empty($wx_auth_info['openid']) && $this->wx_open_id = $wx_auth_info['openid'];
+        }
+
+
     }
 
     public function beforeAction($action)
     {
+        //忽略所有资源文件请求
+//        $path_info = pathinfo(\Yii::$app->request->absoluteUrl);
+//        $extension = isset($path_info['extension'])?$path_info['extension']:'';
+//        if(in_array($extension,['js','css','jpg','gif','ico'])){
+//            return false;
+//        }
         parent::beforeAction($action);
+
         if($this->is_need_login){
+
             if(!$this->user_id && strpos($this->ignore_action,$action->id)===false){
                 if($this->request->isAjax){
                     //需要登录才能访问

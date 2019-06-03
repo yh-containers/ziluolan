@@ -27,7 +27,6 @@ class CheckWxLogin extends BaseObject
         }
         //验证是否已有登录用户
         if(!$is_ignore && !$session->has(\common\models\User::USER_SESSION_LOGIN_INFO)){
-
             //验证微信浏览器
 //            if ( ($request->isGet && preg_match('~micromessenger~i', $request->userAgent)) ) {
 

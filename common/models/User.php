@@ -320,6 +320,17 @@ class User extends BaseModel
         UserLog::recordLog($this,2,$quota,$cond,$intro,$extra,$origin_type,$is_group);
     }
 
+    /**
+     * 用户钱包余额
+     * */
+    public function handleWallet($number,$cond=false,$intro='',array $extra=[],$origin_type = 1,$is_group=0)
+    {
+        $quota = [$this->wallet,$number];
+        $this->updateCounters(['wallet'=>$number]);
+        array_push($quota,$this->wallet);
+        //记录日志
+        UserLog::recordLog($this,4,$quota,$cond,$intro,$extra,$origin_type,$is_group);
+    }
 
     /**
      * 自动添加时间戳，序列化参数

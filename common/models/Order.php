@@ -37,14 +37,14 @@ class Order extends BaseModel
     ];
     //支付方式
     public static $fields_pay_way = [
-        ['name'=>'微信'],
-        ['name'=>'钱包'],
-        ['name'=>'线下'],
+        ['name'=>'微信支付'],
+        ['name'=>'线下支付'],
+        ['name'=>'钱包支付'],
     ];
     //订单状态
     public static $fields_status = [
         ['name'=>'待付款','style'=>'wait-pay','u_handle'=>[
-                self::U_ORDER_HANDLE_PAY=>['rec_mode'=>1],
+                self::U_ORDER_HANDLE_SURE_REC=>['rec_mode'=>1],
                 self::U_ORDER_HANDLE_PAY,
                 self::U_ORDER_HANDLE_CANCEL,
                 self::U_ORDER_HANDLE_DEL
@@ -237,15 +237,20 @@ class Order extends BaseModel
         $inv_pear_per = self::getPropInfo('inv_pear_per');
         $inv_pear_dis_money = is_numeric($inv_pear_per)?$inv_pear_per*$inv_pear:0.00;
         //发票数据
-        $invoice_content = isset($input_data['invoice'])?$input_data['invoice']:'';
+        $invoice_content = isset($input_data['invoice'])?$input_data['invoice']:[];
+        $invoice_content = isset($invoice_content[$invoice_type])?$invoice_content[$invoice_type]:[];
         $invoice_data = [];//发票数据
         //发票模版
         $invoice_temp = self::getPropInfo('fields_invoice',$invoice_type,'input');
         if(!empty($invoice_temp) && is_array($invoice_temp) && is_array($invoice_content)){
             foreach ($invoice_content as $key=>$vo){
+                $invoice_type_name = isset($invoice_temp[$key])?$invoice_temp[$key]['name']:'';
+                if(empty($vo)){
+                    throw new \Exception('请输入发票信息:'.$invoice_type_name);
+                }
                 $invoice_data[] =[
                     'key'    => $key,
-                    'name'   => isset($invoice_temp[$key])?$invoice_temp[$key]['name']:'',
+                    'name'   => $invoice_type_name,
                     'value'  =>  $vo,
                 ];
             }
@@ -325,6 +330,112 @@ class Order extends BaseModel
         }
     }
 
+    /**
+     * 订单支付
+     * @param User $model_user  当前操作用户
+     * @param int $order_id  订单id
+     * @param array $input_data  用户请求数据
+     * @throws
+     * @return array|null
+     * */
+    public static function pay(User $model_user,$order_id,array $input_data =[])
+    {
+        $pay_way = empty($input_data['pay_way'])?0:$input_data['pay_way'];
+
+        $model = self::findOne($order_id);
+        if(empty($model)) throw new \Exception('订单信息异常');
+        //可操作选项
+        $sure_handle = $model->getStepFlowInfo($model['step_flow'],'u_handle');
+        if(!is_array($sure_handle) || !in_array(self::U_ORDER_HANDLE_PAY,$sure_handle))  throw new \Exception('订单未处于待支付状态');
+
+        if(!array_key_exists($pay_way,self::$fields_pay_way))  throw new \Exception('支付方式异常');
+        //订单实际支付金额
+        $pay_money = $model->getAttribute('pay_money');
+        $model->pay_way = $pay_way;
+        if($model->pay_way==1){
+            //线下流程
+
+        }elseif($model->pay_way==2){
+            //余额支付
+            $wallet = $model_user->getAttribute('wallet');
+            if($wallet-$pay_money<0)  throw new \Exception('余额不足无法进行支付');
+            //开启事务
+            $transaction = \Yii::$app->db->beginTransaction();
+            //订单已支付状态调整
+            $model->order_success();
+            $model_user->handleWallet(-$pay_money,$order_id,'订单余额支付');
+
+        }else{
+            //微信支付
+            $wx_object = \Yii::createObject(\Yii::$app->components['wechat']);
+            $open_id = isset($input_data['open_id'])?$input_data['open_id']:'';
+            try{
+
+                $jsApiParameters = $wx_object->handleJsApiPay($open_id,$model);
+                return ['jsapi',$jsApiParameters];
+            }catch (\Exception $e){
+                throw new \Exception($e->getMessage());
+            }
+
+
+        }
+
+        try{
+            $model->save(false);
+            isset($transaction) && $transaction->isActive && $transaction->commit();
+        }catch (\Exception $e){
+            isset($transaction) && $transaction->isActive && $transaction->rollBack();
+            throw new \Exception($e->getMessage());
+        }
+
+    }
+
+    //调整订单支付已完成
+    protected function order_success()
+    {
+        if(!empty($this->step_flow)){
+            return true;
+        }
+        //调整订单信息
+        $this->step_flow = 1;
+        $this->status = 1;
+        $this->pay_time = time();
+        return $this->save(false);
+    }
+
+    //订单回调通知
+    public static function handleNotify($order_no,array $data)
+    {
+        $model = self::find()->where(['no'=>$order_no])->limit(1)->one();
+        if(empty($model)){
+            return;
+        }
+        //保存第三方支付信息
+        $model->setAttribute('third_pay_info',json_encode($data));
+        return $model->order_success();
+    }
+
+    //订单数据
+    public function getOrderPayInfo()
+    {
+        return [
+            'body' => '订单支付',
+            'attach' => 'attach',
+            'no' => $this->getAttribute('no'),
+            'pay_money' => $this->getAttribute('pay_money'),
+            'expire_time' => 600,
+            'goods_tag' => 'goods',
+            'notify_url' => \yii\helpers\Url::to(['wechat/notify'],true),
+        ];
+//        $input->SetBody("test");
+//        $input->SetAttach("test");
+//        $input->SetOut_trade_no("sdkphp".date("YmdHis"));
+//        $input->SetTotal_fee("1");
+//        $input->SetTime_start(date("YmdHis"));
+//        $input->SetTime_expire(date("YmdHis", time() + 600));
+//        $input->SetGoods_tag("test");
+//        $input->SetNotify_url("http://paysdk.weixin.qq.com/notify.php");
+    }
 
 
     //订单号

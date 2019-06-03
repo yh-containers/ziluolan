@@ -123,8 +123,8 @@ $this->params = [
                             <?php if(isset($vo['input']) && is_array($vo['input'])) {?>
                             <div class="choose">
                                 <ul class="add">
-                                    <?php foreach ($vo['input'] as $key=>$input){?>
-                                        <li><input type="text" name="invoice[<?=$key?>]" placeholder="<?=$input['name']?>："></li>
+                                    <?php foreach ($vo['input'] as $d_key=>$input){?>
+                                        <li><input type="text" name="invoice[<?=$key?>][<?=$d_key?>]" placeholder="<?=$input['name']?>："></li>
                                     <?php }?>
                                 </ul>
                             </div>

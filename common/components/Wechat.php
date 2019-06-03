@@ -1,6 +1,7 @@
 <?php
 namespace common\components;
 
+use common\models\BaseModel;
 use yii\base\BaseObject;
 
 class Wechat extends BaseObject
@@ -20,6 +21,8 @@ class Wechat extends BaseObject
     public $appid;
     //开发者密码
     public $appsecret;
+    public $key;
+    public $merchant_id;
 
     //缓存信息
     const WX_ACCESS_TOKEN_CACHE_NAME = 'WX_ACCESS_TOKEN_CACHE_NAME';
@@ -158,6 +161,65 @@ class Wechat extends BaseObject
             }
         }
     }
+
+    //第三方支付
+    public function handleJsApiPay($openId,BaseModel $model)
+    {
+        $lib_path = \Yii::getAlias('@vendor').'/wechat/';
+        require_once $lib_path."/lib/WxPay.Api.php";
+        require_once $lib_path."/example/WxPay.JsApiPay.php";
+        require_once $lib_path."/example/WxPay.Config.php";
+
+        $tools = new \JsApiPay();
+        if($model instanceof \common\models\Order){
+            $pay_info = $model->getOrderPayInfo();
+        }else{
+            throw new \Exception('订单数据异常');
+        }
+        //②、统一下单
+        $input = new \WxPayUnifiedOrder();
+        isset($pay_info['body']) &&$input->SetBody($pay_info['body']);
+        isset($pay_info['attach']) &&$input->SetAttach($pay_info['attach']);
+        isset($pay_info['no']) &&$input->SetOut_trade_no($pay_info['no']);
+        isset($pay_info['pay_money']) && $input->SetTotal_fee($pay_info['pay_money']*100);
+        $input->SetTime_start(date("YmdHis"));
+        $input->SetTime_expire(date("YmdHis", time() + (isset($pay_info['expire_time'])?$pay_info['expire_time']:600)));
+        isset($pay_info['goods_tag']) && $input->SetGoods_tag($pay_info['goods_tag']);
+        $input->SetNotify_url($pay_info['notify_url']);
+        $input->SetTrade_type("JSAPI");
+        $input->SetOpenid($openId);
+//        var_dump($input);exit;
+        $config = new \WxPayConfig($this->appid,$this->merchant_id,$this->key,$this->appsecret);
+        try{
+            $order = \WxPayApi::unifiedOrder($config, $input);
+            if(isset($order['return_code']) && $order['return_code']=='FAIL'){
+                //失败
+                throw new \Exception($order['return_msg']);
+            }elseif (isset($order['err_code'])){
+                //失败
+                throw new \Exception($order['err_code_des'].'.err_code:'.$order['err_code']);
+            }
+            $jsApiParameters = $tools->GetJsApiParameters($order);
+            return $jsApiParameters;
+        }catch (\Exception $e){
+            throw new \Exception($e->getMessage());
+        }
+//        echo '<font color="#f00"><b>统一下单支付单信息</b></font><br/>';
+//        var_dump($order);exit;
+
+
+    }
+
+    //处理微信通知回调
+    public function handleNotify()
+    {
+        $config = new \WxPayConfig($this->appid,$this->merchant_id,$this->key,$this->appsecret);
+        $notify = new PayNotifyCallBack($config);
+        $notify->Handle($config, false);
+    }
+
+
+
     //模版内容
     public static function getTempContent($temp_id=null,$data=[])
     {
@@ -170,6 +232,8 @@ class Wechat extends BaseObject
         }
         return $content;
     }
+
+
 
     //模版消息内容
     public static function getTemp($temp_id=null)
@@ -217,3 +281,114 @@ class Wechat extends BaseObject
         }
     }
 }
+
+require_once \Yii::getAlias('@vendor').'/wechat/lib/WxPay.Data.php';
+require_once \Yii::getAlias('@vendor').'/wechat/lib/WxPay.Notify.php';
+require_once \Yii::getAlias('@vendor').'/wechat/lib/WxPay.Api.php';
+class PayNotifyCallBack extends \WxPayNotify
+{
+    /**
+     * @var \WxPayConfig
+     * */
+    protected $wx_pay_config;
+    public function __construct(\WxPayConfig $wx_pay_config)
+    {
+        $this->wx_pay_config = $wx_pay_config;
+    }
+
+    //查询订单
+    public function Queryorder($transaction_id)
+    {
+        $input = new \WxPayOrderQuery();
+        $input->SetTransaction_id($transaction_id);
+
+//        $config = new WxPayConfig();
+        $result = \WxPayApi::orderQuery($this->wx_pay_config, $input);
+//        Log::DEBUG("query:" . json_encode($result));
+        \Yii::info("query:" . json_encode($result),'微信支付回调查询'.__METHOD__);
+
+        if(array_key_exists("return_code", $result)
+            && array_key_exists("result_code", $result)
+            && $result["return_code"] == "SUCCESS"
+            && $result["result_code"] == "SUCCESS")
+        {
+            return $result['trade_state'];
+        }
+        return false;
+    }
+
+    /**
+     *
+     * 回包前的回调方法
+     * 业务可以继承该方法，打印日志方便定位
+     * @param string $xmlData 返回的xml参数
+     *
+     **/
+    public function LogAfterProcess($xmlData)
+    {
+        \Yii::info("call back， return xml:" . $xmlData,'微信支付回调查询'.__METHOD__);
+//        Log::DEBUG("call back， return xml:" . $xmlData);
+        return;
+    }
+
+    //重写回调处理函数
+    /**
+     * @param WxPayNotifyResults $data 回调解释出的参数
+     * @param WxPayConfigInterface $config
+     * @param string $msg 如果回调处理失败，可以将错误信息输出到该方法
+     * @return true回调出来完成不需要继续回调，false回调处理未完成需要继续回调
+     */
+    public function NotifyProcess($objData, $config, &$msg)
+    {
+        $data = $objData->GetValues();
+        //TODO 1、进行参数校验
+        if(!array_key_exists("return_code", $data)
+            ||(array_key_exists("return_code", $data) && $data['return_code'] != "SUCCESS")) {
+            //TODO失败,不是支付成功的通知
+            //如果有需要可以做失败时候的一些清理处理，并且做一些监控
+            $msg = "异常异常";
+            return false;
+        }
+        if(!array_key_exists("transaction_id", $data)){
+            $msg = "输入参数不正确";
+            return false;
+        }
+
+        //TODO 2、进行签名验证
+        try {
+            $checkResult = $objData->CheckSign($config);
+            if($checkResult == false){
+                //签名错误
+//                Log::ERROR("签名错误...");
+                \Yii::info("进行签名验证异常:\"签名错误..." ,'微信支付回调查询'.__METHOD__);
+                return false;
+            }
+        } catch(Exception $e) {
+            \Yii::info("进行签名验证异常:" . $e->getMessage(),'微信支付回调查询'.__METHOD__);
+//            Log::ERROR(json_encode($e));
+        }
+
+        //TODO 3、处理业务逻辑
+        \Yii::info("处理业务逻辑:" . json_encode($data),'微信支付回调查询'.__METHOD__);
+        $notfiyOutput = array();
+
+
+        //查询订单，判断订单真实性
+        $query_info = $this->Queryorder($data["transaction_id"]);
+        if(!$query_info){
+            $msg = "订单查询失败";
+            return false;
+        }
+
+        //订单处理
+        if($query_info['trade_state']=='SUCCESS'){
+            //支付成功
+            \common\models\Order::handleNotify($data["out_trade_no"],$data);
+        }
+
+
+
+        return [true,$query_info['trade_state']];
+    }
+}
+

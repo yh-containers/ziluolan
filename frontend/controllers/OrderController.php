@@ -198,6 +198,37 @@ class OrderController extends CommonController
         $this->asJson(['code'=>1,'msg'=>'操作成功']);
     }
 
+    //订单支付
+    public function actionPay()
+    {
 
+        $id = $this->request->isGet?$this->request->get('id'):$this->request->post('id');
+        if($this->request->isAjax){
+            $php_input = $this->request->post();
+            try{
+                $php_input['open_id'] = $this->wx_open_id;
+                list($type, $parameters) = \common\models\Order::Pay($this->user_model,$id,$php_input);
+            }catch (\Exception $e){
+                throw new \yii\base\UserException($e->getMessage());
+            }
+            if(!empty($type)){
+                return $this->asJson(['code'=>2,'msg'=>'操作成功','type'=>$type,'parameters'=>$parameters]);
+            }else{
+                return $this->asJson(['code'=>1,'msg'=>'付款成功']);
+            }
+        }
+        $model = \common\models\Order::findOne($id);
+
+        return $this->render('pay',[
+            'model' => $model,
+            'user_model' => $this->user_model
+        ]);
+    }
+
+    //订单回调
+    public function actionNotify()
+    {
+
+    }
 
 }

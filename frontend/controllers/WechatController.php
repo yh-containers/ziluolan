@@ -4,19 +4,39 @@ namespace frontend\controllers;
 
 class WechatController extends CommonController
 {
+    public $enableCsrfValidation=false;
     //无需授权登录
     public $is_need_login=false;
 
     public function actionIndex()
     {
+
+
         if($this->request->isGet){
-            //验证流程
-            return $this->request->get('echostr');
+            $input_data = $this->request->get();
+            if(!count($input_data)){
+                return 'hello wechat';
+            }
+            $signature = $this->request->get('signature');
+            $timestamp  = $this->request->get('timestamp');
+            $nonce  = $this->request->get('nonce');
+            $echostr  = $this->request->get('echostr');
+            $token  = 'zll';
+            $sort_data = [$token,$timestamp,$nonce];
+            sort($sort_data);
+            $sha1_str = implode('',$sort_data);
+            $hashcode = sha1($sha1_str);
+            if($hashcode==$signature){
+                return $echostr;
+            }else{
+                return;
+            }
         }
         $php_input = file_get_contents('php://input');
+        \Yii::$app->cache->set('xml_test_input',$php_input);
         $data = $this->_xmlToArray($php_input);
 //        dump($data);exit;
-//        cache('xml_test_input',$data);
+        \Yii::$app->cache->set('xml_test_input',$data);
         if(!empty($data) && is_array($data)){
             //消息类型
             $type = $data['MsgType'];
@@ -37,6 +57,12 @@ class WechatController extends CommonController
 //        $response_str = $this->handleResponse($data['FromUserName'],$data['ToUserName'],$data['Content']);
 
         return 'success';
+    }
+
+    public function actionCacheData()
+    {
+        echo 'cache-data'.PHP_EOL;
+        var_dump(\Yii::$app->cache->get('xml_test_input'));
     }
 
     //处理事件通知
