@@ -44,7 +44,7 @@ class Order extends BaseModel
     //订单状态
     public static $fields_status = [
         ['name'=>'待付款','style'=>'wait-pay','u_handle'=>[
-                self::U_ORDER_HANDLE_SURE_REC=>['rec_mode'=>1],
+//                self::U_ORDER_HANDLE_SURE_REC=>['rec_mode'=>1],
                 self::U_ORDER_HANDLE_PAY,
                 self::U_ORDER_HANDLE_CANCEL,
                 self::U_ORDER_HANDLE_DEL
@@ -372,7 +372,7 @@ class Order extends BaseModel
             try{
 
                 $jsApiParameters = $wx_object->handleJsApiPay($open_id,$model);
-                return ['jsapi',$jsApiParameters];
+
             }catch (\Exception $e){
                 throw new \Exception($e->getMessage());
             }
@@ -387,6 +387,8 @@ class Order extends BaseModel
             isset($transaction) && $transaction->isActive && $transaction->rollBack();
             throw new \Exception($e->getMessage());
         }
+
+        if(isset($jsApiParameters)) return ['jsapi',$jsApiParameters];
 
     }
 
@@ -422,7 +424,8 @@ class Order extends BaseModel
             'body' => '订单支付',
             'attach' => 'attach',
             'no' => $this->getAttribute('no'),
-            'pay_money' => $this->getAttribute('pay_money'),
+//            'pay_money' => $this->getAttribute('pay_money'),
+            'pay_money' => 0.01,
             'expire_time' => 600,
             'goods_tag' => 'goods',
             'notify_url' => \yii\helpers\Url::to(['wechat/notify'],true),
@@ -642,8 +645,8 @@ class Order extends BaseModel
                 foreach ($group_money as $uid=>$vo){
                     $model_user = User::findOne($uid);
                     $com_money_cal = empty($vo['money'])?0:$vo['money'];
-                    //获得健康豆
-                    $model_user->handleDepositMoney($com_money_cal,$model->getAttribute('id'),'有用户消费获得团队提成增加:'.$com_money_cal,$vo,1);
+                    //获得个人获得团队提成
+                    $model_user->handleTeamWallet($com_money_cal,$model->getAttribute('id'),'有用户消费获得团队提成增加:'.$com_money_cal,$vo,1);
                     if(!empty($model_user)){
                         //获得健康豆
                         $dep_money = intval($com_money_cal*self::COM_DES_PER*100)/100;
@@ -655,8 +658,8 @@ class Order extends BaseModel
                 }
             }
 
-            //团队金增加
-            $model_user_buy->handleTeamWallet($model->getAttribute('need_pay_money'));
+            //我的团队金增加
+            $model_user_buy->handleTeamWalletFull($model->getAttribute('need_pay_money'));
             $transaction->commit();
         }catch (\Exception $e){
             $transaction->rollBack();
@@ -813,13 +816,13 @@ class Order extends BaseModel
         //团队模式
         $rev_users = array_reverse($model_user_buy_link);
         //获取团队贡献金额
-        $group_users = User::find()->asArray()->select('id,team_wallet')->where(['id'=>$model_user_buy_link])->all();
+        $group_users = User::find()->asArray()->select('id,team_wallet_full')->where(['id'=>$model_user_buy_link])->all();
         $group_users = array_column($group_users,null,'id');
         //离我最近的几个用户拿提成
         $link_user_top_money = [];
         foreach ($rev_users  as $vo){
             if(isset($group_users[$vo])){
-                $link_user_top_money[$group_users[$vo]['team_wallet']] =  $group_users[$vo];
+                $link_user_top_money[$group_users[$vo]['team_wallet_full']] =  $group_users[$vo];
             }
         }
         krsort($link_user_top_money,SORT_NUMERIC);
@@ -829,7 +832,7 @@ class Order extends BaseModel
         $group_record_current_index = false;
         $group_record_all_per = []; //记录所有比例
         foreach ($link_user_top_money as $vo){
-            list($group_award_index,$group_award_per) = $this->_get_group_per($vo['team_wallet']);
+            list($group_award_index,$group_award_per) = $this->_get_group_per($vo['team_wallet_full']);
             if($group_award_index===false || $group_award_per<=0 || $group_record_current_index===$group_award_index){
                 //直接结束 //没有达到标准 比例小于0、已处理过同比例的数据
                 break;
@@ -907,7 +910,6 @@ class Order extends BaseModel
         $team_group_per = false;
         foreach ($group_award_setting as $cond_key=>$vo){
             $cond = $vo['cond']; //比例
-
             //是否有设置值
             if(isset($group_award[$cond_key])){
                 //查看金额范围
@@ -919,7 +921,7 @@ class Order extends BaseModel
                             break;
                         }
                     }elseif(count($cond)==1){
-                        if($team_wallet >= $cond*$cond_multiple){
+                        if($team_wallet >= $cond[0]*$cond_multiple){
                             $team_group_index = $cond_key;
                             $team_group_per = $group_award[$cond_key];
                             break;

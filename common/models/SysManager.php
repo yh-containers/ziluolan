@@ -33,6 +33,15 @@ class SysManager extends BaseModel
     }
 
     /**
+     * 店铺角色
+     * */
+    public static function getStoreRole()
+    {
+        return self::find()->where(['rid'=>2,'status'=>1])->all();
+    }
+
+
+    /**
      * 获取管理员省份
      * */
     public function getProvince($is_force=true)

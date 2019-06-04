@@ -51,7 +51,7 @@ $this->params=[
                     <th>
                         <a href="<?=\yii\helpers\Url::to(['detail','id'=>$vo['id']])?>" class="btn btn-xs btn-default">详细</a>
                         <a href="<?=\yii\helpers\Url::to(['add','id'=>$vo['id']])?>" class="btn btn-xs btn-warning">编辑</a>
-                        <a href="<?=\yii\helpers\Url::to(['order/index','id'=>$vo['id']])?>" class="btn btn-xs btn-primary">订单(<?=empty($vo['linkOrderCount']['order_num'])?0:$vo['linkOrderCount']['order_num']?>)</a>
+                        <a href="<?=\yii\helpers\Url::to(['order/index','user_id'=>$vo['id']])?>" class="btn btn-xs btn-primary">订单(<?=empty($vo['linkOrderCount'])?0:$vo['linkOrderCount']['order_num']?>)</a>
                         <a href="<?=\yii\helpers\Url::to(['finance/index','id'=>$vo['id']])?>" class="btn btn-xs btn-info">流水</a>
                         <a href="<?=\yii\helpers\Url::to(['del','id'=>$vo['id']])?>" class="btn btn-xs btn-danger">删除</a>
                     </th>

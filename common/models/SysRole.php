@@ -65,4 +65,12 @@ class SysRole extends BaseModel
     {
         return $this->hasOne(self::className(),['id'=>'pid']);
     }
+
+    /**
+     * 门店角色
+     * */
+//    public function getLinkStoreRole()
+//    {
+//        return $this->hasMany(SysManager::className(),['rid'=>'id'])->where(['id'=>2]);
+//    }
 }

@@ -59,11 +59,21 @@ class SystemController extends CommonController
     //管理员--删除
     public function actionRolesDel()
     {
-
         $id = $this->request->get('id');
-        $model = new \common\models\SysRole();
-        $result = $model->actionDel(['id'=>$id]);
-        return $this->asJson($result);
+        $model = \common\models\SysRole::findOne($id);
+        if(empty($model)){
+            throw new \yii\base\UserException('删除对象异常');
+        }
+        if($model->getAttribute('is_sys')){
+            throw new \yii\base\UserException('系统指定角色无法删除');
+        }
+        try{
+            $model->delete();
+            return $this->asJson(['code'=>1,'msg'=>'删除成功']);
+        }catch (\Exception $e){
+            return $this->asJson(['code'=>0,'msg'=>$e->getMessage()]);
+        }
+
     }
 
     /*

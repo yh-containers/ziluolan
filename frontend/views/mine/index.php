@@ -9,7 +9,8 @@ $this->params = [
 <?php $this->endBlock()?>
 <?php $this->beginBlock('content')?>
 
-<div class="header"> <a href="javascript:window.history.back()" class="back"><img src="<?=\Yii::getAlias('@assets')?>/images/back.png" alt=""></a>
+<div class="header">
+
     <div class="logo"><?=$this->title?></div>
     <a href="javascript:;" class="sort cl_nav"></a>
 </div>

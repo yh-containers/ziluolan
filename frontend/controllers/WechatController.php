@@ -23,7 +23,7 @@ class WechatController extends CommonController
             $echostr  = $this->request->get('echostr');
             $token  = 'zll';
             $sort_data = [$token,$timestamp,$nonce];
-            sort($sort_data);
+            sort($sort_data,SORT_STRING);
             $sha1_str = implode('',$sort_data);
             $hashcode = sha1($sha1_str);
             if($hashcode==$signature){
@@ -64,6 +64,15 @@ class WechatController extends CommonController
         echo 'cache-data'.PHP_EOL;
         var_dump(\Yii::$app->cache->get('xml_test_input'));
     }
+
+    //支付回调
+    public function actionNotify()
+    {
+        $wx_object = \Yii::createObject(\Yii::$app->components['wechat']);
+        $wx_object->handleNotify();
+        return;
+    }
+
 
     //处理事件通知
     public function handleEvent($data)
@@ -140,6 +149,8 @@ class WechatController extends CommonController
         return $this->handleResponse($data['ToUserName'],$data['FromUserName'],$data['Content']);
     }
 
+
+
     /*
      * 消息
      * @param $FromUserName string 发送者
@@ -172,4 +183,6 @@ EOT;
         $values = json_decode(json_encode(simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA)), true);
         return $values;
     }
+
+
 }

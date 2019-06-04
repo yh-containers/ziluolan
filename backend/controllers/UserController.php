@@ -84,10 +84,41 @@ class UserController extends CommonController
     //
     public function actionAdd()
     {
-        $id = $this->request->get('id');
+        $id = $this->request->isGet?$this->request->get('id'):$this->request->get('id');
         $model = \common\models\User::findOne($id);
+
+        if($this->request->isAjax){
+            if($id && empty($model)) throw new \yii\base\UserException('操作对象异常');
+            if(empty($model)){
+                $model = new \common\models\User();
+            }
+            $php_input = $this->request->post();
+            $model->attributes=$php_input;
+
+            $transaction = \Yii::$app->db->beginTransaction();
+            try{
+                if(!$model->isNewRecord && $model->getAttribute('admin_id')!=$model->getOldAttribute('admin_id')){
+                    //门店变化
+                    \common\models\User::updateAll(
+                        ['admin_id'=>$model->getAttribute('admin_id')],
+                        new \yii\db\Expression('FIND_IN_SET(:field, fl_uid_all)',[':field'=>$id])
+                    );
+
+                }
+                $model->save();
+                $transaction->commit();
+            }catch (\Exception $e){
+                $transaction->rollBack();
+                throw new \yii\base\UserException($e->getMessage());
+            }
+            return $this->asJson(["code"=>1,"msg"=>'修改成功']);
+        }
+
+        //获取门店管理员
+        $store = \common\models\SysManager::getStoreRole();
         return $this->render('add',[
-            'model'=>$model
+            'model'=>$model,
+            'store'=>$store,
         ]);
     }
 

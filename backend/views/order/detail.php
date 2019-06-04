@@ -51,7 +51,8 @@ $this->params=[
                     <td><?=$model['pay_money']?></td>
                     <td>总优惠</td>
                     <td><?=$model['dis_money']?></td>
-
+                    <td>支付方式</td>
+                    <td class="text-red"><?=\common\models\Order::getPropInfo('fields_pay_way',$model['pay_way'],'name')?></td>
                 </tr>
                 <tr>
                     <td>金豆抵扣数量</td>
@@ -163,6 +164,7 @@ $this->params=[
                     <th width="200">商品sku组合名</th>
                     <th width="120">商品价格</th>
                     <th width="80">购买数量</th>
+                    <th width="80">提成模式</th>
                 </tr>
                 </thead>
 
@@ -173,6 +175,7 @@ $this->params=[
                         <td><?=$vo['sku_name']?></td>
                         <td><?=$vo['price']?></td>
                         <td><?=$vo['num']?></td>
+                        <td><?=\common\models\Goods::getPropInfo('fields_mode',$vo['g_mode'],'name')?></td>
                     </tr>
                 <?php }?>
                 </tbody>

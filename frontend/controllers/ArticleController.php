@@ -67,7 +67,7 @@ class ArticleController extends CommonController
             $data[] = $info;
         }
 
-        return $this->asJson(['code'=>1,'msg'=>'获取成功','data'=>$data,'page'=>$pagination->pageCount]);
+        return $this->asJson(['code'=>1,'msg'=>'获取成功','data'=>$data,'pages'=>$pagination->pageCount]);
     }
 
     //详情

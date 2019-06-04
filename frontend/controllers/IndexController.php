@@ -52,4 +52,12 @@ class IndexController extends CommonController
 
         return $this->goHome();
     }
+    public function actionCacheFlush()
+    {
+        $session = \yii::$app->session;
+        $session->destroy();
+        \yii::$app->cache->flush();
+
+        return $this->goHome();
+    }
 }

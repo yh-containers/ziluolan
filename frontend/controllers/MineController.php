@@ -64,6 +64,7 @@ class MineController extends CommonController
             ->asArray()
             ->joinWith(['linkGoods'])
             ->with(['linkSkuAttrPrice'])
+            ->where(['uid'=>$this->user_id])
             ->all();
 
         foreach ($list as &$vo){
@@ -206,7 +207,7 @@ class MineController extends CommonController
             ];
         }
 
-        return $this->asJson(['code'=>1,'msg'=>'获取成功','data'=>$data,'page'=>$pagination->pageCount]);
+        return $this->asJson(['code'=>1,'msg'=>'获取成功','data'=>$data,'pages'=>$pagination->pageCount]);
     }
 
     //我的地址-新增/编辑
@@ -243,9 +244,13 @@ class MineController extends CommonController
     //用户提现
     public function actionWithdraw()
     {
+        //用户提现数量
+        $withdraw_money = \common\models\UserWithdraw::find()->where(['uid'=>$this->user_id])->sum('out_money');
+        $withdraw_money = empty($withdraw_money)?0.00:$withdraw_money;
 
         return $this->render('withdraw',[
-
+            'user_model'  => $this->user_model,
+            'withdraw_money'  => $withdraw_money,
         ]);
     }
 
@@ -273,4 +278,170 @@ class MineController extends CommonController
             'link_users'  => $link_users,
         ]);
     }
+
+    //健康豆换金豆
+    public function actionDw2Wa()
+    {
+        $number = $this->request->post('number');
+        try{
+
+            $this->user_model->dm2w($number);
+        }catch (\Exception $e){
+            throw new \yii\base\UserException($e->getMessage());
+        }
+        return $this->asJson(['code'=>1,'msg'=>'兑换成功']);
+
+    }
+
+    //赠送金豆
+    public function actionGiveUser()
+    {
+        $number = $this->request->post('number');
+        $user_number = $this->request->post('user_number');
+        try{
+
+            $this->user_model->giveUser($user_number,$number);
+        }catch (\Exception $e){
+            throw new \yii\base\UserException($e->getMessage());
+        }
+        return $this->asJson(['code'=>1,'msg'=>'兑换成功']);
+    }
+
+    //银行卡管理
+    public function actionBankCard()
+    {
+        $channel = $this->request->get('channel');
+        return $this->render('bankCard',[
+            'channel'=>$channel
+        ]);
+    }
+
+    //我的地址-新增/编辑
+    public function actionBankCardAdd()
+    {
+        $id = $this->request->get('id',0);
+        $model = new \common\models\UserBankCard();
+        if($this->request->isAjax){
+            $php_input = $this->request->post();
+            $php_input['uid'] = $this->user_id;
+            $result = $model->actionSave($php_input);
+            return $this->asJson($result);
+        }
+        $model = $model::findOne($id);
+
+        return $this->render('bankCardAdd',[
+            'model'=>$model
+        ]);
+    }
+
+    //删除地址
+    public function actionBankCardDel()
+    {
+        $id = $this->request->get('id',0);
+        $model = new \common\models\UserBankCard();
+        $result = $model->actionDel(['id'=>$id,'uid'=>$this->user_id]);
+
+        return $this->asJson($result);
+    }
+
+    public function actionBankCardList()
+    {
+        $query = \common\models\UserBankCard::find()
+            ->where([
+                'uid'=>$this->user_id
+            ]);
+        $count = $query->count();
+        $pagination = \Yii::createObject(array_merge(\Yii::$app->components['pagination'],['totalCount' => $count]));
+        $list = $query->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->orderBy('id desc')
+            ->all();
+
+        $data = [];
+        foreach($list as $vo){
+            $data[] = [
+                'id'         => $vo['id'],
+                'name'       => $vo['name'],
+                'phone'      => substr_replace($vo['phone'],'****',3,4),
+                'number'     =>  substr_replace($vo['number'],'****',0,-4),
+                'username'   => $vo['username'],
+            ];
+        }
+
+        return $this->asJson(['code'=>1,'msg'=>'获取成功','data'=>$data,'pages'=>$pagination->pageCount]);
+    }
+
+    //用户提现
+    public function actionWithdrawMoney()
+    {
+        $bank_id = $this->request->isGet?$this->request->get('bank_id'):$this->request->post('bank_id');
+        $channel = $this->request->get('channel');
+
+        if($this->request->isAjax){
+            $number = $this->request->post('number');
+            try{
+                $this->user_model->withdrawConfirm($bank_id,$number);
+            }catch (\Exception $e){
+                return $this->asJson(['code'=>0,'msg'=>$e->getMessage()]);
+            }
+            return $this->asJson(['code'=>1,'msg'=>'操作成功']);
+        }
+
+
+        $bank_query = \common\models\UserBankCard::find();
+        if(!empty($bank_id)) $bank_query = $bank_query->where(['id'=>$bank_id]);
+        $model_bank = $bank_query->orderBy('id desc')->one();
+
+
+        return $this->render('withdrawMoney',[
+            'user_model'=>$this->user_model,
+            'model_bank'=>$model_bank,
+            'channel'=> $channel,
+        ]);
+    }
+
+    //用户余额日志
+    public function actionMoneyLog()
+    {
+        $state = $this->request->get('state');
+
+        return $this->render('moneyLog',[
+            'state' => $state,
+        ]);
+    }
+
+    //用户消费余额日志
+    public function actionMoneyLogList()
+    {
+        $state = $this->request->get('state');
+        $query = \common\models\UserLog::find()
+            ->where(['uid'=>$this->user_id]);
+        if($state==1){
+            //商品购买
+            $query =  $query->andWhere(['type'=>[4]]);
+        }elseif($state==2){
+            //提成收入
+            $query =  $query->andWhere(['type'=>[1,2,3]]);
+        }
+        $count = $query->count();
+        $pagination = \Yii::createObject(array_merge(\Yii::$app->components['pagination'],['totalCount' => $count]));
+        $list = $query->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->orderBy('id desc')
+            ->all();
+
+        $data = [];
+        foreach($list as $vo){
+            $data[] = [
+                'id'         => $vo['id'],
+                'type'       => \common\models\UserLog::getPropInfo('fields_type',$vo['type'],'name'),
+                'intro'      => $vo['intro'],
+                'create_time'   => $vo['create_time'],
+            ];
+        }
+
+        return $this->asJson(['code'=>1,'msg'=>'获取成功','data'=>$data,'pages'=>$pagination->pageCount]);
+    }
+
+
 }

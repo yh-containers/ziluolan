@@ -11,7 +11,10 @@ class UserLog extends BaseModel
         ['name'=>'健康豆','field'=>'deposit_money'],
         ['name'=>'消费金豆','field'=>'consum_wallet'],
         ['name'=>'团队提成','field'=>'team_wallet'],
-        ['name'=>'余额',],
+        ['name'=>'金豆消费','field'=>'wallet'],
+        ['name'=>'金康豆换金豆',],
+        ['name'=>'金豆赠送','field'=>'wallet'],
+        ['name'=>'提现','field'=>'wallet'],
     ];
 
     public static $fields_origin_type = [

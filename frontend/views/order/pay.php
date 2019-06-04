@@ -44,16 +44,29 @@ $this->params = [
 <?php $this->beginBlock('script')?>
 <script>
     //支付信息
-    var pay_parameters=[];
+    var pay_parameters={};
     //调用微信JS api 支付
     function jsApiCall()
     {
+        console.log(typeof pay_parameters)
         WeixinJSBridge.invoke(
             'getBrandWCPayRequest',
             pay_parameters,
             function(res){
-                WeixinJSBridge.log(res.err_msg);
-                alert(res.err_code+res.err_desc+res.err_msg);
+                switch (res.err_msg) {
+                    case 'get_brand_wcpay_request:ok':
+                        alert('支付成功');
+                        break;
+                    case 'get_brand_wcpay_request:cancel':
+                        alert('已取消支付');
+                        break;
+                    case 'get_brand_wcpay_request:fail':
+                    default:
+                        alert('支付失败');
+                        break;
+                }
+                // WeixinJSBridge.log(res.err_msg);
+                // alert(res.err_code+res.err_desc+res.err_msg);
             }
         );
     }
@@ -87,8 +100,16 @@ $(function(){
             success:function(res){
                 if(res.code===2){
                     pay_parameters = res.parameters
+                    if(typeof pay_parameters==='string'){
+                        pay_parameters=JSON.parse(pay_parameters);
+                    }
+                    callpay()
                 }else{
                     layui.layer.msg(res.msg)
+                }
+                if(res.code==1 || res.code==2){
+                    setTimeout(function(){window.location.href="<?=\yii\helpers\Url::to(['order/detail','id'=>$model['id']])?>"},100)
+
                 }
             }
         })

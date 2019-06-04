@@ -195,11 +195,12 @@ class Wechat extends BaseObject
             if(isset($order['return_code']) && $order['return_code']=='FAIL'){
                 //失败
                 throw new \Exception($order['return_msg']);
-            }elseif (isset($order['err_code'])){
+            }elseif (isset($order['err_code']) ){
                 //失败
                 throw new \Exception($order['err_code_des'].'.err_code:'.$order['err_code']);
             }
-            $jsApiParameters = $tools->GetJsApiParameters($order);
+            $jsApiParameters = $tools->GetJsApiParameters($config,$order);
+//            var_dump($jsApiParameters);exit;
             return $jsApiParameters;
         }catch (\Exception $e){
             throw new \Exception($e->getMessage());
@@ -213,6 +214,9 @@ class Wechat extends BaseObject
     //处理微信通知回调
     public function handleNotify()
     {
+        $lib_path = \Yii::getAlias('@vendor').'/wechat/';
+        require_once $lib_path."/example/WxPay.Config.php";
+
         $config = new \WxPayConfig($this->appid,$this->merchant_id,$this->key,$this->appsecret);
         $notify = new PayNotifyCallBack($config);
         $notify->Handle($config, false);
@@ -312,7 +316,7 @@ class PayNotifyCallBack extends \WxPayNotify
             && $result["return_code"] == "SUCCESS"
             && $result["result_code"] == "SUCCESS")
         {
-            return $result['trade_state'];
+            return $result;
         }
         return false;
     }
@@ -375,9 +379,8 @@ class PayNotifyCallBack extends \WxPayNotify
 
         //查询订单，判断订单真实性
         $query_info = $this->Queryorder($data["transaction_id"]);
-        if(!$query_info){
-            $msg = "订单查询失败";
-            return false;
+        if($query_info===false){
+            \Yii::info("订单查询失败:" . json_encode($query_info),'微信支付回调查询'.__METHOD__);
         }
 
         //订单处理

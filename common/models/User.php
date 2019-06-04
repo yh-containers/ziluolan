@@ -9,7 +9,9 @@ class User extends BaseModel
     use SoftDelete;
     //微信登录
     const USER_SESSION_LOGIN_INFO = 'USER_SESSION_LOGIN_INFO';
-
+    const DEPOSIT_2_WALLET_PER = 1;//健康豆兑换金豆比例
+    const WITHDRAW_MONEY_PER = 1;//用户提现比例
+    const WITHDRAW_MONEY_COM_PER = 0.05;//用户提现比例
     public static function tableName()
     {
         return '{{%user}}';
@@ -280,6 +282,127 @@ class User extends BaseModel
     }
 
     /**
+     * 健康豆换金豆
+     * @param float $number兑换数量
+     * @throws
+     * */
+    public function dm2w($number)
+    {
+        $deposit_money = $this->getAttribute('deposit_money');
+        if ( $number<=0 || !is_numeric($number) ) throw new \Exception('兑换数量只能为正实数');
+        if ( $deposit_money < $number ) throw new \Exception('健康豆不足');
+        //兑换数量
+        $change_number = self::DEPOSIT_2_WALLET_PER*$number;
+
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            $before_data = [
+                'deposit_money' => $deposit_money,
+                'wallet' => $this->getAttribute('wallet'),
+                'per' => self::DEPOSIT_2_WALLET_PER,
+                'number' => $number,
+                'change_number' => $change_number,
+            ];
+            //兑换-交易
+            $this->updateCounters([
+                'deposit_money' => -$number,
+                'wallet'=> $change_number,
+            ]);
+
+            $after_data = [
+                'deposit_money' => $this->getAttribute('deposit_money'),
+                'wallet' => $this->getAttribute('wallet'),
+            ];
+            //记录日志
+            UserLog::recordLog($this,5,false,false,'使用健康豆'.$number.'换金豆'.$change_number,['before_data'=>$before_data,'after_data'=>$after_data]);
+            $transaction->commit();
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            throw new \Exception($e->getMessage());
+        }
+
+
+    }
+
+    /**
+     * 赠送金豆
+     * @param string $user_number 用户编号
+     * @param float $number 数量
+     * @throws
+     * */
+    public function giveUser($user_number,$number)
+    {
+        if(empty($user_number)) throw new \Exception('用户编号必须输入');
+
+        $wallet = $this->getAttribute('wallet'); //金豆（余额）
+        if ( $number<=0 || !is_numeric($number) ) throw new \Exception('赠送数量只能为正实数');
+        if ( $wallet < $number ) throw new \Exception('金豆不足');
+        //
+        $model_give_user = self::find()->where(['number'=>$user_number])->one();
+        if(empty($model_give_user))  throw new \Exception('赠送对象不存在');
+
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            $extra = ['form_user_id'=>$this->getAttribute('id'),'to_user_id'=>$model_give_user->getAttribute('id'),'number'=>$number];
+            $this->handleWallet(-$number,false,'赠送'.$number.'金豆给编号为:'.$user_number.'的用户',$extra,0,0,6);
+            $model_give_user->handleWallet($number,false,'获得用户编号为:'.$this->getAttribute('number').'赠送的金豆数量:'.$number,$extra,0,0,6);
+            $transaction->commit();
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            throw new \Exception($e->getMessage());
+        }
+
+
+    }
+
+    /**
+     * 用户提现
+     * */
+    public function withdrawConfirm($bank_id,$number)
+    {
+        if(empty($bank_id)) throw new \Exception('请选择银行卡');
+        $wallet = $this->getAttribute('wallet'); //金豆（余额）
+        if ( $number<=0 || !is_numeric($number) ) throw new \Exception('提现数量只能为正实数');
+        if($number<100)  throw new \Exception('提现金额必须大于100');
+        if ( $wallet < $number ) throw new \Exception('金豆不足');
+
+        //查看银行卡
+        $transaction = \Yii::$app->db->beginTransaction();
+        $model_bank = UserBankCard::findOne($bank_id);
+        if(empty($model_bank)) throw new \Exception('银行卡信息异常');
+        if($model_bank['uid']!=$this->getAttribute('id')) throw new \Exception('银行卡信息异常2');
+
+        try{
+            //创建提现记录
+            $model = new UserWithdraw();
+            $model->uid = $this->getAttribute('id');
+            $model->bid = $bank_id;
+            $model->com_money = $number*self::WITHDRAW_MONEY_COM_PER;//手续费
+            $model->in_money = $number;
+            $model->per = self::WITHDRAW_MONEY_PER;
+            $model->out_money = ($number-$model->com_money)*self::WITHDRAW_MONEY_PER;//最终提现金额
+            //银行卡信息
+            $model->bank_name = $model_bank['name'];
+            $model->bank_number = $model_bank['number'];
+            $model->bank_username = $model_bank['username'];
+            $model->bank_phone = $model_bank['phone'];
+
+            $model->status = 0;
+            $model->create_time = date('Y-m-d H:i:s');
+            $model->save(false);
+            //扣钱
+            $this->handleWallet(-$number,$bank_id,'提现'.$number.'元宝到银行卡:'.$model_bank['number'],[],0,0,7);
+            $transaction->commit();
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            throw new \Exception($e->getMessage());
+        }
+
+    }
+
+
+
+    /**
      * 团队个人金额增加
      * @param double $number
      * */
@@ -321,15 +444,15 @@ class User extends BaseModel
     }
 
     /**
-     * 用户钱包余额
+     * 用户金豆(钱包)余额
      * */
-    public function handleWallet($number,$cond=false,$intro='',array $extra=[],$origin_type = 1,$is_group=0)
+    public function handleWallet($number,$cond=false,$intro='',array $extra=[],$origin_type = 1,$is_group=0,$type=4)
     {
         $quota = [$this->wallet,$number];
         $this->updateCounters(['wallet'=>$number]);
         array_push($quota,$this->wallet);
         //记录日志
-        UserLog::recordLog($this,4,$quota,$cond,$intro,$extra,$origin_type,$is_group);
+        UserLog::recordLog($this,$type,$quota,$cond,$intro,$extra,$origin_type,$is_group);
     }
 
     /**
@@ -362,6 +485,8 @@ class User extends BaseModel
             ['consume_type','default','value'=>0],
             ['tuijian_id','default','value'=>0], //推荐用户id
             ['image','default','value'=>'/assets/images/default.jpg'],
+            [['wallet','deposit_money','consum_wallet'],'default','value'=>0.00],
+            ['username','safe'],
         ]);
         return $rule;
     }

@@ -7,10 +7,11 @@ class OrderController extends CommonController
 
     public function actionIndex()
     {
-
+        $user_id = $this->request->get('user_id');
 
         //会员模型
         $query = \common\models\Order::find();
+        !empty($user_id) &&  $query = $query->andWhere(['uid'=>$user_id]);
         $count = $query->count();
         $pagination = \Yii::createObject(array_merge(\Yii::$app->components['pagination'],['totalCount'=>$count]));
         $list = $query

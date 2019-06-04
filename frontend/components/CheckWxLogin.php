@@ -6,7 +6,7 @@ use yii\base\BaseObject;
 class CheckWxLogin extends BaseObject
 {
     //忽略微信授权登录的控制器
-    public $ignore_wx_auth_controller = ['wechat'];
+    public $ignore_wx_auth_controller = ['wechat','debug'];
 
     public function init()
     {
