@@ -6,17 +6,22 @@
 ?>
 <?php $this->beginBlock('style'); ?>
 <style>
+    .layui-tab-title {margin-bottom: 15px;background: #f5f5f5;}
+    .layui-tab-title li {font-size: 16px}
     #goods-img .item{position: relative; display: inline-block}
     #goods-img .item i{right: 0px;position: absolute;z-index: 999;font-size: 24px;color: red;cursor: pointer}
     #add-spu-block input{width: 160px;display: inline-block}
-    #add-spu-block .fa-close{color: red}
+    #add-spu-block .fa-close{color: red;font-size: 18px;}
 
-    #sku-add-block .form-group{border-bottom: 1px solid #ccc;}
-    #sku-add-block .form-group .control-label{text-align: left}
-    #sku-add-block .form-group .control-label i{cursor: pointer}
+    #sku-add-block .form-group{border-bottom: 1px solid #ccc;padding: 10px 0px}
+    #sku-add-block .form-group .control-label{text-align: left;padding: 3px 0px 0px;}
+    #sku-add-block .form-group .control-label i{cursor: pointer;font-size: 18px}
     #sku-add-block .form-group .control-label i.fa-plus{color:#0a73bb ;margin-right: 3px}
     #sku-add-block .form-group .control-label i.fa-close{color:red}
-    #sku-add-block .form-group .control-label em{float:right}
+    #sku-add-block .form-group .control-label em{float:right;font-style: normal;}
+    #sku-add-block .form-group.input-group {border:none;padding: 0px;}
+    #sku-add-block .form-group.input-group input {height: 35px;}
+    #sku-add-block .form-group.input-group .btn-info {height: 35px;width: 100px;font-size: 14px}
 
     #sku-block {}
     #sku-block .fa-close{color:red;cursor: pointer}
@@ -95,7 +100,13 @@
                     </div>
                 </div>
             </div>
+            <div class="form-group">
+                <label for="inputPassword3" class="col-sm-2 control-label">运费</label>
 
+                <div class="col-sm-8">
+                    <input type="number" class="form-control" name="freight_money" value="<?= empty($model)?0:$model['freight_money']?>" placeholder="">
+                </div>
+            </div>
             <div class="form-group">
                 <label for="inputPassword3" class="col-sm-2 control-label">销量</label>
 
@@ -127,55 +138,60 @@
                     </div>
                 </div>
             </div>
-            <hr>
-            <div class="layui-card">
-                <div class="layui-card-body">
-                    <div class="layui-tab  layui-tab-brief" lay-filter="docDemoTabBrief">
-                        <ul class="layui-tab-title">
-                            <li class="layui-this">商品信息</li>
-                            <li>商品规格</li>
-                            <li>商品详细</li>
-                        </ul>
-                        <div class="layui-tab-content">
-                            <div class="layui-tab-item layui-show">
-                                <div class="row">
-                                    <div class="col-sm-4 " id="sku-add-block">
-                                        <div class="form-group input-group input-group-sm">
-                                            <input type="text" class="form-control" placeholder="请输入sku属性名">
-                                            <span class="input-group-btn">
-                                              <button type="button" class="btn btn-info btn-flat" id="sku-add">新增</button>
-                                            </span>
+            <div class="form-group">
+                <label for="inputPassword3" class="col-sm-2 control-label" style="line-height: 46px;">商品详细</label>
+                <div class="col-sm-8 layui-card">
+                    <div class="row">
+                        <div class="layui-card-body">
+                            <div class="layui-tab  layui-tab-brief" lay-filter="docDemoTabBrief">
+                                <ul class="layui-tab-title">
+                                    <li class="layui-this">商品信息</li>
+                                    <li>商品规格</li>
+                                    <li>商品详情</li>
+                                </ul>
+                                <div class="layui-tab-content">
+                                    <div class="layui-tab-item layui-show">
+                                        <div class="rows">
+                                            <div id="sku-add-block">
+                                                <div class="form-group input-group input-group-sm">
+                                                    <input type="text" class="form-control" placeholder="请输入sku属性名">
+                                                    <span class="input-group-btn">
+                                                      <button type="button" class="btn btn-info btn-flat" id="sku-add">新增</button>
+                                                    </span>
+                                                </div>
+
+                                            </div>
+                                            <div id="sku-block">
+                                                <div class="form-group">
+                                                <table class="table table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th width="60">#</th>
+                                                            <th width="250">组合名</th>
+                                                            <th width="80">价格</th>
+                                                            <th width="80">库存</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+
+                                                    </tbody>
+                                                </table>
+                                                </div>
+                                            </div>
                                         </div>
-
                                     </div>
-                                    <div class="col-sm-8" id="sku-block">
-                                        <table class="table table-bordered">
-                                            <thead>
-                                                <tr>
-                                                    <th width="60">#</th>
-                                                    <th width="250">组合名</th>
-                                                    <th width="80">价格</th>
-                                                    <th width="80">库存</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
 
-                                            </tbody>
-                                        </table>
 
+                                    <div class="layui-tab-item">
+                                        <div class="form-group">
+                                            <script id="attr" name="attr" type="text/plain"><?=$model['attr']?></script>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-
-
-                            <div class="layui-tab-item">
-                                <div class="form-group">
-                                    <script id="attr" name="attr" type="text/plain"><?=$model['attr']?></script>
-                                </div>
-                            </div>
-                            <div class="layui-tab-item">
-                                <div class="form-group">
-                                    <script id="container" name="content" type="text/plain"><?=$model['content']?></script>
+                                    <div class="layui-tab-item">
+                                        <div class="form-group">
+                                            <script id="container" name="content" type="text/plain"><?=$model['content']?></script>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -185,6 +201,7 @@
         </div>
         <!-- /.box-body -->
         <div class="box-footer">
+             <label class="col-sm-2 control-label"></label>
             <button type="button" class="btn btn-info col-sm-offset-2 col-sm-8 col-xs-12" id="submit">保存</button>
         </div>
         <!-- /.box-footer -->
@@ -297,7 +314,16 @@
             $("#submit").click(function(){
                 var req_obj = {};
                 $("#form").serializeArray().map(function(item,index){
-                    req_obj[item.name] = item.value
+                    var obj_arr_index = item.name.indexOf('[]');
+                    if(obj_arr_index===-1){
+                        req_obj[item.name] = item.value
+                    }else{
+                        var obj_key_name = item.name.substring(0,obj_arr_index);
+                        if(!req_obj.hasOwnProperty(obj_key_name)){
+                            req_obj[obj_key_name] = [];
+                        }
+                        req_obj[obj_key_name].push( item.value)
+                    }
                 })
                 //绑定sku信息
                 req_obj['sku'] = sku;

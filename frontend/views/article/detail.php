@@ -14,11 +14,7 @@ $this->params = [
 </div>
 <div class="clearfix" style="height:60px;"> </div>
 <div class="main clearfix">
-    <ul class="inside_nav">
-        <?php foreach ($menu['linkNavPage'] as $vo){?>
-            <li <?=$vo['id']==$menu_id?'class="cur"':''?> ><a href="<?=\yii\helpers\Url::to(['','id'=>$vo['id']])?>"><?=$vo['name']?></a></li>
-        <?php }?>
-    </ul>
+
     <div class="news_deta wrap">
         <div class="text">
             <div class="news_deta_title"><?=$model['title']?></div>

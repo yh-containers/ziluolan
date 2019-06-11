@@ -17,8 +17,13 @@ $this->params = [
     <ul class="inside_nav">
         <?php
             foreach ($menu['linkNavPage'] as $vo){
-                $route = \frontend\widgets\Nav::defineRoute($vo['route']);
-                $url = !is_array($route)?$route:\yii\helpers\Url::to(array_merge($route,['id'=>$vo['id']]));
+                if(empty($route)){
+                    $url = \yii\helpers\Url::to(['','id'=>$vo['id']]);
+                }else{
+                    $route = \frontend\widgets\Nav::defineRoute($vo['route']);
+                    $url = !is_array($route)?$route:\yii\helpers\Url::to(array_merge($route,['id'=>$vo['id']]));
+                }
+
         ?>
             <li <?=$vo['id']==$id?'class="cur"':''?> ><a href=" <?=$url?>"><?=$vo['name']?></a></li>
         <?php }?>

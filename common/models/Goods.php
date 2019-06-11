@@ -46,6 +46,7 @@ class Goods extends BaseModel
             ['sort','number','min'=>0,'max'=>100,'tooSmall'=>'{attribute}不得低于{min}','tooBig'=>'{attribute}不得高于{max}','message'=>'{attribute}必须是数字'],
             ['sort','default','value'=>100],
             ['sold_num','default','value'=>0],
+            ['freight_money','default','value'=>0],
             ['n_id','default','value'=>0],
             ['status','default','value'=>1],
             [['attr','content'], 'safe'],

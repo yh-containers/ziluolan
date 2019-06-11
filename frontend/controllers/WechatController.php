@@ -41,16 +41,21 @@ class WechatController extends CommonController
             //消息类型
             $type = $data['MsgType'];
             $return_data = '';
-            switch ($type){
-                case 'event':
-                    $return_data = $this->handleEvent($data);
-                    break;
-                case 'text':
-                    $return_data = $this->handleText($data);
-                    break;
-                default:
-                    break;
+            try{
+                switch ($type){
+                    case 'event':
+                        $return_data = $this->handleEvent($data);
+                        break;
+                    case 'text':
+                        $return_data = $this->handleText($data);
+                        break;
+                    default:
+                        break;
+                }
+            }catch (\Exception $e){
+                \Yii::$app->cache->set('wechat_error',$e->getMessage().':'.$e->getLine());
             }
+            \Yii::$app->cache->set('wechat_response_content',$return_data);
 //            trace($return_data,'msg_type'.$type);
             return $return_data?$return_data:'success';
         }
@@ -63,6 +68,12 @@ class WechatController extends CommonController
     {
         echo 'cache-data'.PHP_EOL;
         var_dump(\Yii::$app->cache->get('xml_test_input'));
+        echo 'wechat_response_content'.PHP_EOL;
+        var_dump(\Yii::$app->cache->get('wechat_response_content'));
+        echo 'wechat_response_handle_content'.PHP_EOL;
+        var_dump(\Yii::$app->cache->get('wechat_response_handle_content'));
+        echo 'wechat-error'.PHP_EOL;
+        var_dump(\Yii::$app->cache->get('wechat_error'));
     }
 
     //支付回调
@@ -105,12 +116,11 @@ class WechatController extends CommonController
 
             }
 
-        }elseif($event=='LOCATION'){
+        }elseif($event=='location'){
             //上传地址
-        }elseif($event=='CLICK'){
+        }elseif($event=='click'){
             //获取菜单时间
-            $model = new \common\models\SysSetting();
-            $var_menu = $model->getContent('wechat_menu');
+            $var_menu = \common\models\SysSetting::getContent('wechat_menu');
 //            trace($var_menu,'aaaaaaaaaaa');
 //            trace($data['EventKey'],'bbbbb');
             $var_menu = $var_menu?json_decode($var_menu,true):[];
@@ -138,6 +148,7 @@ class WechatController extends CommonController
                     }
                 }
             }
+            \Yii::$app->cache->set('wechat_response_handle_content',':'.'EventKey:'.$data['EventKey'].'content:'.$content);
             //自定义菜单事件
             return $content;
         }

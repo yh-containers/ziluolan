@@ -19,18 +19,18 @@
         </div>
         <div class="box-body">
 
-            <div class="form-group">
+            <!--<div class="form-group">
                 <label for="inputPassword3" class="col-sm-1 control-label">角色等级</label>
 
                 <div class="col-sm-10">
                     <select name="pid" class="form-control">
                         <option value="0">一级角色</option>
-                        <?php foreach($top_role as $vo) {?>
-                            <option value="<?=$vo['id']?>" <?=$vo['id']==$model['pid']?'selected':''?>><?=$vo['name']?></option>
-                        <?php }?>
+                        <?php /*foreach($top_role as $vo) {*/?>
+                            <option value="<?/*=$vo['id']*/?>" <?/*=$vo['id']==$model['pid']?'selected':''*/?>><?/*=$vo['name']*/?></option>
+                        <?php /*}*/?>
                     </select>
                 </div>
-            </div>
+            </div>-->
             <div class="form-group">
                 <label for="inputPassword3" class="col-sm-1 control-label">名称</label>
 

@@ -24,8 +24,7 @@ $this->params = [
                 </colgroup>
                 <thead>
                 <tr>
-                    <th>一级角色</th>
-                    <th>二级角色</th>
+                    <th>角色名</th>
                     <th>状态</th>
                     <th>更新时间</th>
                     <th>操作</th>
@@ -34,26 +33,15 @@ $this->params = [
                 <tbody>
                 <?php foreach($model as $vo){?>
                     <tr>
-                        <td rowspan="<?=count($vo['linkRoles'])+1?>"><a href="<?=\yii\helpers\Url::to(['roles-add','id'=>$vo['id']])?>"><?=$vo['name']?></a></td>
-                        <td>--</td>
-                        <td><?=\common\models\SysRole::getPropInfo('fields_statue',$vo['status'])?></td>
+                        <td><a href="<?=\yii\helpers\Url::to(['roles-add','id'=>$vo['id']])?>"><?=$vo['name']?></a></td>
+                        <td><?=\common\models\SysRole::getPropInfo('fields_status',$vo['status'])?></td>
                         <td><?=$vo->updateTime?></td>
                         <td>
                             <a  class="layui-btn layui-btn-sm" href="<?=\yii\helpers\Url::to(['roles-add','id'=>$vo['id']])?>">编辑</a>
                             <a  class="layui-btn layui-btn-danger layui-btn-sm"  href="javascript:;" onclick="$.common.del('<?= \yii\helpers\Url::to(['roles-del','id'=>$vo['id']])?>','删除')" class="ml-5">  删除</a>
                         </td>
                     </tr>
-                    <?php foreach($vo['linkRoles'] as $item){?>
-                        <tr>
-                            <td><a href="<?=\yii\helpers\Url::to(['roles-add','id'=>$item['id']])?>"><?=$item['name']?></a></td>
-                            <td><?=\common\models\SysRole::getPropInfo('fields_statue',$item['status'])?></td>
-                            <td><?=$item->updateTime?></td>
-                            <td>
-                                <a  class="layui-btn layui-btn-sm" href="<?=\yii\helpers\Url::to(['roles-add','id'=>$item['id']])?>">编辑</a>
-                                <a  class="layui-btn layui-btn-danger layui-btn-sm"  href="javascript:;" onclick="$.common.del('<?= \yii\helpers\Url::to(['roles-del','id'=>$item['id']])?>','删除')" class="ml-5">  删除</a>
-                            </td>
-                        </tr>
-                    <?php }?>
+
                 <?php }?>
                 </tbody>
             </table>

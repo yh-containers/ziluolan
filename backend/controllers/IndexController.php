@@ -106,4 +106,18 @@ class IndexController extends CommonController
 
         ]);
     }
+
+    /**
+     * Logout action.
+     *
+     * @return string
+     */
+    public function actionLogout()
+    {
+        $session = \yii::$app->session;
+        $session->destroy();
+
+        return $this->goHome();
+    }
+
 }

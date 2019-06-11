@@ -61,8 +61,9 @@ class SysSetting extends BaseModel
         $cache = \Yii::$app->cache;
         $cache->delete($cache_name);
         $model = self::findOne($type);
+        if(empty($model)) throw new \Exception('缓存key不存在:'.$type);
         $model->content = $content;
-        return $model->save();
+        return $model->save(false);
     }
 
 }

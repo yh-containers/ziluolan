@@ -37,7 +37,9 @@ class SysManager extends BaseModel
      * */
     public static function getStoreRole()
     {
-        return self::find()->where(['rid'=>2,'status'=>1])->all();
+        $store_all = self::find()->where(['rid'=>2,'status'=>1])->all();
+        array_unshift($store_all,self::find()->where(['rid'=>1,'status'=>1])->orderBy('id asc')->one());
+        return $store_all;
     }
 
 

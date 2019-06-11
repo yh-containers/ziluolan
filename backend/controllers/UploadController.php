@@ -53,6 +53,77 @@ class UploadController extends CommonController
         }
     }
 
+
+    //wechat上传
+    public function actionWechat($type='image')
+    {
+        $upload = new UploadedFile();
+        $file = $upload->getInstanceByName(key($_FILES));
+        //相对路径
+        $relative_path =  '/uploads/wechat_temp/';
+        //保存目录
+        $path = $relative_path;
+        if (!file_exists($path)) {
+            $this->createDir($path);
+        }
+        //保存文件名
+        $save_name = md5(time().$file->baseName) . '.' . $file->extension;
+        //保存绝对路径
+        $save_path = $this->root_path.$path . $save_name;
+        //保存图片
+        $file->saveAs($save_path);
+        //微信
+        $wx_object = \Yii::createObject(\Yii::$app->components['wechat']);
+        $url = 'https://api.weixin.qq.com/cgi-bin/material/add_material?access_token='.$wx_object->getAccessToken().'&type='.$type;
+        if(!$file->hasError){
+            // 成功上传后 获取上传信息
+            // 输出 jpg
+//            echo $info->getExtension();
+            // 输出 20160820/42a79759f284b767dfcb2a0197904287.jpg
+//            echo $info->getSaveName();
+            // 输出 42a79759f284b767dfcb2a0197904287.jpg
+//            echo $info->getFilename();
+            $path = str_replace('\\','/',$relative_path.$save_name);
+            //上传微信服务器
+            $result = $this->_postFile($path,$url);
+            if(isset($result['errcode']) && $result['errcode']>0){
+                return $this->asJson([ 'code'=>0,'msg'=>'上传异常:'.$result['errmsg'],'path'=>$path]);
+            }
+            return $this->asJson(array_merge([ 'code'=>1,'msg'=>'上传成功','path'=>$path],$result));
+        }else{
+            // 上传失败获取错误信息
+            return $this->asJson([ 'code'=>0,'msg'=>'上传异常']);
+        }
+
+
+
+    }
+
+    private function _postFile($path,$url){
+        $path = $this->root_path.$path;
+        $curl = curl_init();
+        if (class_exists('\CURLFile')) {
+            curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
+            $data = array('media' => new \CURLFile(realpath($path)));//>=5.5
+        }else{
+            if (defined('CURLOPT_SAFE_UPLOAD')) {
+                curl_setopt($curl, CURLOPT_SAFE_UPLOAD, false);
+            }
+            $data = array('media' => '@' . realpath($path));//<=5.5
+        }
+
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, 1 );
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_USERAGENT,"TEST");
+        $result = curl_exec($curl);
+        $error = curl_error($curl);
+        $result = json_decode($result,true);
+        return $result;
+
+    }
+
     /**
      * 递归：生成目录
      */

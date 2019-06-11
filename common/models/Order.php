@@ -192,7 +192,7 @@ class Order extends BaseModel
         foreach ($goods_data as $vo){
 
             $goods_price = $vo['price']*$vo['buy_num']; // 购买金额
-            $freight_money = 0.00;//$vo['freight_money']*$vo['buy_num']; // 运费金额
+            $freight_money = empty($vo['goods_info']['freight_money'])?0:$vo['goods_info']['freight_money']*$vo['buy_num']; // 运费金额
             $taxation_money = 0.00;////$vo['taxation_money']*$vo['buy_num']; // 税费金额
 
             $money['money'] += $goods_price+$freight_money+$taxation_money;
@@ -223,19 +223,26 @@ class Order extends BaseModel
      * */
     public function confirm(User $model_user,$goods_info,$money,$model_addr,array $input_data =[])
     {
-        if(empty($model_addr)) throw new \Exception('请选择收货地址');
-        if(empty($goods_info)) throw new \Exception('请选择购买商品');
         //收货方式
         $recive_mode = isset($input_data['recive_mode'])?$input_data['recive_mode']:1;
+
+        if($recive_mode && empty($model_addr)) throw new \Exception('请选择收货地址');
+        if(empty($goods_info)) throw new \Exception('请选择购买商品');
+        
         //备注
         $remark = empty($input_data['message'])?'':trim($input_data['message']);
         //发票
         $invoice_type = isset($input_data['fapiao'])?$input_data['fapiao']:0;
         //虚拟豆数量
         $inv_pear = isset($input_data['inv_pear'])?$input_data['inv_pear']:0;
+        if($inv_pear<0) throw new \Exception('消费豆只能为正数');
+        if(!empty($inv_pear) && $inv_pear > $model_user->getAttribute('consum_wallet')){
+            throw new \Exception('消费豆不足');
+        }
         //虚拟豆抵扣金额
         $inv_pear_per = self::getPropInfo('inv_pear_per');
         $inv_pear_dis_money = is_numeric($inv_pear_per)?$inv_pear_per*$inv_pear:0.00;
+
         //发票数据
         $invoice_content = isset($input_data['invoice'])?$input_data['invoice']:[];
         $invoice_content = isset($invoice_content[$invoice_type])?$invoice_content[$invoice_type]:[];
@@ -259,11 +266,14 @@ class Order extends BaseModel
         $model_order = $this;
         $model_order->no = self::getOrderNo();
         $model_order->uid = $model_user->id;
+        $model_order->admin_id = $model_user->getAttribute('admin_id');//订单门店
+
         $model_order->rec_mode = $recive_mode;
         $model_order->remark = $remark;
         $model_order->invoice_type = $invoice_type;
         //发票数据
         !empty($invoice_data) && $model_order->invoice_content = json_encode($invoice_data);
+
 
         if(empty($recive_mode)){
             //自提
@@ -272,6 +282,12 @@ class Order extends BaseModel
             //快递
             $model_order->money = !empty($money['money'])?$money['money']:0.00;
         }
+
+        //消费都是否使用过多
+        if($inv_pear_dis_money>$model_order->money){
+            throw new \Exception('该订单最多只能抵扣:'.$model_order->money.',已超出抵扣数量');
+        }
+
 
         //使用虚拟豆
         $model_order->use_inv_pear = $inv_pear;
@@ -289,6 +305,8 @@ class Order extends BaseModel
 
         try{
             $transaction = self::getDb()->beginTransaction();
+
+
             if($this->check_channel=='cart'){
                 //购物车过来删除购物车内容
                 UserCart::deleteAll(['uid'=>$model_user->id,'is_checked'=>1]);
@@ -296,14 +314,22 @@ class Order extends BaseModel
 
             //保存订单信息
             $model_order->save(false);
-            //保存收货地址
-            $model_order_addr = new OrderAddr();
-            $model_order_addr->oid=$model_order->id;
-            $model_order_addr->phone=!empty($model_addr['phone'])?$model_addr['phone']:'';
-            $model_order_addr->username=!empty($model_addr['username'])?$model_addr['username']:'';
-            $model_order_addr->addr=!empty($model_addr['addr'])?$model_addr['addr']:'';
-            $model_order_addr->addr_extra=!empty($model_addr['addr_extra'])?$model_addr['addr_extra']:'';
-            $model_order_addr->save(false);
+
+            //消费豆抵扣消费
+            $inv_pear>0 && $model_user->handleConsumWallet(-$inv_pear,$model_order->id,'使用消费豆抵扣:'.$inv_pear_dis_money,[],1,0,8);
+
+            //快递
+            if($recive_mode && !empty($model_addr)){
+                //保存收货地址
+                $model_order_addr = new OrderAddr();
+                $model_order_addr->oid=$model_order->id;
+                $model_order_addr->phone=!empty($model_addr['phone'])?$model_addr['phone']:'';
+                $model_order_addr->username=!empty($model_addr['username'])?$model_addr['username']:'';
+                $model_order_addr->addr=!empty($model_addr['addr'])?$model_addr['addr']:'';
+                $model_order_addr->addr_extra=!empty($model_addr['addr_extra'])?$model_addr['addr_extra']:'';
+                $model_order_addr->save(false);
+            }
+            
 
             //商品数据
             foreach($goods_info as $vo){
@@ -352,6 +378,7 @@ class Order extends BaseModel
         //订单实际支付金额
         $pay_money = $model->getAttribute('pay_money');
         $model->pay_way = $pay_way;
+
         if($model->pay_way==1){
             //线下流程
 
@@ -381,6 +408,8 @@ class Order extends BaseModel
         }
 
         try{
+            //消费金豆消费
+
             $model->save(false);
             isset($transaction) && $transaction->isActive && $transaction->commit();
         }catch (\Exception $e){
@@ -505,17 +534,28 @@ class Order extends BaseModel
             $handle_action = $model->getUserHandleAction('m_handle');
             if(!in_array(self::M_ORDER_HANDLE_DEL,$handle_action))  throw new \Exception('订单状态未处于可删除状态');
             $model->m_id_opt_del = $user_model->getAttribute('id');
-
+            //订单用户
+            $model_user = User::findOne($model['uid']);
         }else{
+            $model_user = $user_model;
             if(empty($model) || $model['uid']!=$user_model->id)  throw new \Exception('订单数据异常');
             $handle_action = $model->getUserHandleAction();
             if(!in_array(self::U_ORDER_HANDLE_DEL,$handle_action))  throw new \Exception('订单状态未处于可删除状态');
         }
 
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            !empty($user_model) && $model->_handle_back_inv_pear($model_user);
+            $model->delete();
+            $is_delete = $model->getAttribute(self::getSoftDeleteField());
+            if(!$is_delete) throw new \Exception('删除失败');
+            $transaction->commit();
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            throw new \Exception($e->getMessage());
+        }
 
-        $model->delete();
-        $is_delete = $model->getAttribute(self::getSoftDeleteField());
-        if(!$is_delete) throw new \Exception('删除失败');
+
     }
 
     /**
@@ -536,19 +576,45 @@ class Order extends BaseModel
             $handle_action = $model->getUserHandleAction('m_handle');
             if(!in_array(self::M_ORDER_HANDLE_CANCEL,$handle_action))  throw new \Exception('订单状态未处于可删除状态');
             $model->m_id_opt_cancel = $user_model->getAttribute('id');
+            //订单用户
+            $model_user = User::findOne($model['uid']);
         }else{
+            $model_user = $user_model;
             if(empty($model) || $model['uid']!=$user_model->id)  throw new \Exception('订单数据异常');
             $handle_action = $model->getUserHandleAction();
             if(!in_array(self::U_ORDER_HANDLE_CANCEL,$handle_action))  throw new \Exception('订单状态未处于取消状态');
         }
-
-
-        $model->status = 2;
-        $model->cancel_time = time();
-        $save_bool = $model->save(false);
-        if(!$save_bool){
-            throw new \Exception('订单保存异常');
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            !empty($user_model) && $model->_handle_back_inv_pear($model_user);
+            $model->status = 2;
+            $model->cancel_time = time();
+            $model->save(false);
+            $transaction->commit();
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            throw new \Exception($e->getMessage());
         }
+    }
+
+    /**
+     * 订单取消/删除 消费豆退还处理
+     * */
+    private function _handle_back_inv_pear(User $user_model)
+    {
+        //使用消费豆
+        $use_inv_pear = $this->getAttribute('use_inv_pear');
+
+        if($use_inv_pear > 0){
+            //订单取消动作
+            //返还消费豆
+            $user_model->handleConsumWallet($use_inv_pear,$this->getAttribute('id'),'订单被取消返还消费豆:'.$use_inv_pear,[],1,0,9);
+            $this->pay_money = $this->pay_money+$this->inv_pear_dis_money;
+            $this->use_inv_pear = 0;
+            $this->inv_pear_dis_money = 0;
+        }
+
+
     }
 
 
@@ -622,7 +688,7 @@ class Order extends BaseModel
 
             //提成计算
             list($com_money, $group_money) = $model->_commission_cal($model_user_buy);
-
+//            var_dump($group_money);exit;
             //发放佣金--推荐/固定
             if(!empty($com_money)){
                 foreach ($com_money as $uid=>$vo){
@@ -689,10 +755,24 @@ class Order extends BaseModel
     //订单支付
     private function _sure_pay()
     {
-        $this->step_flow = 1; //进入发货流程
-        $this->status = 1;
-        $this->pay_time = time();
-        $this->save(false);
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            $this->step_flow = 1; //进入发货流程
+            $this->status = 1;
+            $this->pay_time = time();
+            $this->save(false);
+
+            //增加用户累计消费额度
+            $user_model = User::findOne($this->getAttribute('uid'));
+            if(!empty($user_model)){
+                $user_model->handleConsumMoney($this->getAttribute('need_pay_money'));
+            }
+            $transaction->commit();
+        }catch (\Exception $e){
+            $transaction->rollBack();
+            \Yii::info('状态变更异常:'.$e->getMessage(),'sure_pay');
+        }
+
     }
 
     //提成流程
@@ -705,7 +785,7 @@ class Order extends BaseModel
         //获取我的所有上级信息
         //队伍链
         $model_user_buy_link = $model_user_buy['fl_uid_all']?explode(',',$model_user_buy['fl_uid_all']):[];
-//        $model_user_buy_link = ['887','1463','4643','1297','2312','12','14','16','68','369','837'];
+        // $model_user_buy_link = ['887','1463','4643','1297','2312','12','14','16','68','369','837'];
         //直推用户id
         $direct_user_id = isset($model_user_buy_link[0])?$model_user_buy_link[0]:0;
         if(empty($direct_user_id)){
@@ -831,24 +911,35 @@ class Order extends BaseModel
         $link_user_top_money= array_values($link_user_top_money);
         $group_record_current_index = false;
         $group_record_all_per = []; //记录所有比例
+        $group_new_users = [];
         foreach ($link_user_top_money as $vo){
-            list($group_award_index,$group_award_per) = $this->_get_group_per($vo['team_wallet_full']);
-            if($group_award_index===false || $group_award_per<=0 || $group_record_current_index===$group_award_index){
+            list($group_award_index,$group_award_per,$is_over) = $this->_get_group_per($vo['team_wallet_full']);
+            if($group_award_index===false || $group_award_per<=0){
                 //直接结束 //没有达到标准 比例小于0、已处理过同比例的数据
                 break;
             }
             //记录此次比例
-            $group_record_current_index = $group_award_index;
-            array_push($group_record_all_per,$group_award_per);
+            // $group_record_current_index = $group_award_index;
+            // array_push($group_record_all_per,$group_award_per);
+            $vo['com_per_key'] = $group_award_index; //奖励索引
+            $vo['com_per'] = $group_award_per; //奖励索引
+            array_push($group_new_users, $vo);
+            //结束
+            if($is_over) break;
         }
+//        var_dump($group_new_users);exit;
+        //重新计算提成人员--奖励信息
+        $group_new_users_com = array_values(array_column($group_new_users, null,'com_per_key'));
 
+        foreach ($group_new_users_com as $vo) {
+            array_push($group_record_all_per,$vo['com_per']);
+        }
         //最终团队比例
         $group_per = [];
         //计算比例
         !empty($group_record_all_per) && $group_per = $this->_handle_team_per($group_record_all_per);
-
         //处理提成
-        foreach ($link_user_top_money as $key=>$lgm){
+        foreach ($group_new_users_com as $key=>$lgm){
 
             if(isset($group_per[$key])){
                 $per = $group_per[$key];
@@ -861,7 +952,6 @@ class Order extends BaseModel
             }
 
         }
-
 
         return [$com_money,$group_money];
     }
@@ -895,6 +985,7 @@ class Order extends BaseModel
 
     /**
      * 计算团队比例
+     * @param float $team_wallet 团队金额
      * */
     private function _get_group_per($team_wallet)
     {
@@ -908,6 +999,7 @@ class Order extends BaseModel
 
         $team_group_index = false;
         $team_group_per = false;
+        $is_over = false;
         foreach ($group_award_setting as $cond_key=>$vo){
             $cond = $vo['cond']; //比例
             //是否有设置值
@@ -922,6 +1014,7 @@ class Order extends BaseModel
                         }
                     }elseif(count($cond)==1){
                         if($team_wallet >= $cond[0]*$cond_multiple){
+                            $is_over = true; //达到了某一个范围可以结束
                             $team_group_index = $cond_key;
                             $team_group_per = $group_award[$cond_key];
                             break;
@@ -932,7 +1025,7 @@ class Order extends BaseModel
             }
         }
 
-        return [$team_group_index,$team_group_per];
+        return [$team_group_index,$team_group_per,$is_over];
     }
 
     //处理比例问题
@@ -958,8 +1051,9 @@ class Order extends BaseModel
             }
             if($default_dec_step>0){
                 if(isset($team_per[$key+1])){
-                    array_push($per,$default_dec_step);
-                    $max_per-=$default_dec_step;//递减
+                    $current_per = $max_per-$team_per[$key+1];
+                    array_push($per,$current_per);
+                    $max_per-=$current_per;//递减
                 }else{
                     //最后一个元素
                     array_push($per,$max_per);
@@ -996,6 +1090,12 @@ class Order extends BaseModel
     public function getLinkOrderComLog()
     {
         return $this->hasMany(UserLog::className(),['cond'=>'id'])->where(['origin_type'=>1]);
+    }
+
+    //订单门店
+    public function getLinkStore()
+    {
+        return $this->hasOne(SysManager::className(),['id'=>'admin_id']);
     }
 
 }

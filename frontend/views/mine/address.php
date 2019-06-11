@@ -66,6 +66,10 @@ $this->params = [
                             'data-conf="{url:'+"'"+opt_url+"'"+',data:{id:'+"'"+item.id+"'"+'},success:'+handleDel+'}"' +
                             '></a>\n' +
                             '    </div>\n' +
+                            '    <div class="right edit fr">\n' +
+                            '       <a href="'+detail+(detail.indexOf('?')===-1?'?':'&')+'id='+item.id+'"' +
+                            '></a>\n' +
+                            '    </div>\n' +
                             ' </li>');
                     });
 

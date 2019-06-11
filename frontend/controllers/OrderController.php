@@ -109,17 +109,23 @@ class OrderController extends CommonController
     public function actionShowList()
     {
         $state = $this->request->get('state',0);
-        $where = [];
+        $where = ['uid'=>$this->user_id];
         if($state==1){
             //待付款
+            $where['step_flow']= 0;
             $where['status']= 0;
         }elseif($state==2){
             //已完成
+            $where['step_flow']= 3;
             $where['status']=3;
         }elseif($state==3){
             //待发货
-            $where['status']= 1;
+            $where['step_flow']= 1;
             $where['is_send']= 0;
+        }elseif($state==4){
+            //待收货
+            $where['step_flow']= 2;
+            $where['is_receive']= 0;
         }
         $query = \common\models\Order::find()->where($where);
         $count = $query->count();

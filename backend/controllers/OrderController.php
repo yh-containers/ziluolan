@@ -8,22 +8,60 @@ class OrderController extends CommonController
     public function actionIndex()
     {
         $user_id = $this->request->get('user_id');
+        $pay_way = $this->request->get('pay_way');
+        $admin_id = $this->request->get('admin_id');
+        $time_start = $this->request->get('time_start');
+        $time_end = $this->request->get('time_end');
+        $keyword = $this->request->get('keyword');
+        $keyword = trim($keyword);
+
 
         //会员模型
         $query = \common\models\Order::find();
+        //是否是门店管理员
+        if($this->is_store_manager_id!==false){
+            $query = $query->andWhere(['admin_id'=>$this->is_store_manager_id]);
+        }
+
         !empty($user_id) &&  $query = $query->andWhere(['uid'=>$user_id]);
+        !empty($admin_id) &&  $query = $query->andWhere(['admin_id'=>$admin_id]);
+        $pay_way!='' && is_numeric($pay_way) &&  $query = $query->andWhere(['pay_way'=>$pay_way]);
+        !empty($keyword) && $query= $query->andWhere(['like','no',$keyword]);
+        //按时间查询
+        if(!empty($time_end) && !empty($time_start) && $time_end>=$time_start){
+            $query = $query->andWhere(['and',['>=','create_time',strtotime($time_start)],['<=','create_time',strtotime($time_end)+86400]]);
+
+        }elseif (!empty($time_start)){
+            $query = $query->andWhere(['>=','create_time',strtotime($time_start)]);
+
+        }elseif (!empty($time_end)){
+            $query = $query->andWhere(['<=','create_time',strtotime($time_end)]);
+        }
+
         $count = $query->count();
         $pagination = \Yii::createObject(array_merge(\Yii::$app->components['pagination'],['totalCount'=>$count]));
         $list = $query
-            ->with(['linkUser'])
+            ->with(['linkUser','linkStore'])
             ->offset($pagination->offset)
             ->limit($pagination->limit)
             ->orderBy("id desc")
             ->all();
+        //今日营业额
+        $today_money = \common\models\Order::find()->where(['>','status',0])->andWhere(['>=','create_time',strtotime(date('Y-m-d'))])->sum('money');
+        $today_money = sprintf('%.2f',$today_money);
 
+        //获取门店管理员
+        $store = \common\models\SysManager::getStoreRole();
         return $this->render('index',[
+            'store'  => $store,
             'list'  => $list,
+            'time_start'  => $time_start,
+            'time_end'  => $time_end,
+            'keyword'  => $keyword,
+            'pay_way'  => $pay_way,
+            'admin_id'  => $admin_id,
             'pagination' => $pagination,
+            'today_money' => $today_money,
         ]);
     }
 

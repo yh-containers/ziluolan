@@ -12,7 +12,40 @@ $this->params=[
 
 <div class="box">
     <div class="box-header with-border">
+        <div class="col-sm-5  no-padding">
+            <div class="text-red inline  margin-r-5">日营业额:<?=$today_money?></div>
+            <div class="btn-group margin-r-5">
+                <a type="button" href="<?=\yii\helpers\Url::to([''])?>" class="btn <?= ''==$pay_way?'btn-primary':'btn-default'?> ">全部</a>
+                <?php foreach(\common\models\Order::getPropInfo('fields_pay_way') as $key=>$vo){?>
+                    <a type="button" href="<?=\yii\helpers\Url::to(['','pay_way'=>$key])?>" class="btn <?=is_numeric($pay_way)&&$key==$pay_way?'btn-primary':'btn-default'?>"><?=$vo['name']?></a>
+                <?php }?>
+            </div>
 
+        </div>
+        <div class="col-sm-5 no-padding">
+            <form>
+                <div class="col-sm-3">
+                    <select class="form-control" name="admin_id">
+                        <option value="">所属门店</option>
+                        <?php foreach($store as $vo) {?>
+                            <option value="<?=$vo['id']?>" <?=$admin_id==$vo['id']?'selected':''?>><?=$vo['name']?></option>
+                        <?php }?>
+                    </select>
+                </div>
+                <div class="col-sm-2 no-padding">
+                    <input name="time_start" value="<?=$time_start?>" class="form-control"  placeholder="开始时间">
+                </div>
+                <div class="col-sm-2 no-padding">
+                    <input name="time_end" value="<?=$time_end?>" class="form-control"  placeholder="结束时间">
+                </div>
+                <div class="input-group col-sm-4">
+                    <input type="text" class="form-control" name="keyword" value="<?=$keyword?>" placeholder="订单号">
+                    <span class="input-group-btn">
+                  <button type="submit"  class="btn btn-info btn-flat">搜索</button>
+                </span>
+                </div>
+            </form>
+        </div>
     </div>
     <!-- /.box-header -->
     <div class="box-body">
@@ -45,7 +78,7 @@ $this->params=[
                         <td><?=$vo['no']?></td>
                         <td><?=$vo['linkUser']['username']?></td>
                         <td><?=$vo['linkUser']['number']?></td>
-                        <td>所属门店</td>
+                        <td><?=$vo['linkStore']['name']?></td>
                         <td><?=$vo['money']?></td>
                         <td><?=$vo['pay_money']?></td>
                         <td><?=!is_null($vo['pay_way'])?\common\models\Order::getPropInfo('fields_pay_way',$vo['pay_way'],'name'):''?></td>
@@ -114,10 +147,19 @@ $this->params=[
 
 
     $(function(){
-        layui.use(['layer'], function(){
+        layui.use(['layer','laydate'], function(){
             var layer = layui.layer;
+            var laydate = layui.laydate;
 
-
+            //年选择器
+            laydate.render({
+                elem: "input[name='time_start']"
+                ,max: 1 //7天后
+            });
+            laydate.render({
+                elem: "input[name='time_end']"
+                ,max: 1 //7天后
+            });
 
         });
 

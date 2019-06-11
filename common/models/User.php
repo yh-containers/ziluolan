@@ -59,6 +59,7 @@ class User extends BaseModel
                     }
                     //保存队伍链
                     $model->fl_uid_all = $fl_uid_all;
+                    $model->admin_id = $sub_model['linkReqUser']['admin_id']; //对应门店
                 }
             }
 //            !empty($wx_auth_info['access_token']) && $model->setAttribute('wx_access_token',$wx_auth_info['access_token']);
@@ -268,6 +269,16 @@ class User extends BaseModel
         }
     }
     /**
+     * 消费累计增加
+     * @param double $number
+     * */
+    public function handleConsumMoney($number)
+    {
+        $this->updateCounters(['consum_money'=>$number]);
+        //检测用户等级
+        $this->modConsumeType();
+    }
+    /**
      * 团队金额增加
      * @param double $number
      * */
@@ -434,13 +445,13 @@ class User extends BaseModel
     /**
      * 记录用户消费金豆
      * */
-    public  function handleConsumWallet($number,$cond=false,$intro='',array $extra=[],$origin_type = 1,$is_group=0)
+    public  function handleConsumWallet($number,$cond=false,$intro='',array $extra=[],$origin_type = 1,$is_group=0,$type=2)
     {
         $quota = [$this->consum_wallet,$number];
         $this->updateCounters(['consum_wallet'=>$number]);
         array_push($quota,$this->consum_wallet);
         //记录日志
-        UserLog::recordLog($this,2,$quota,$cond,$intro,$extra,$origin_type,$is_group);
+        UserLog::recordLog($this,$type,$quota,$cond,$intro,$extra,$origin_type,$is_group);
     }
 
     /**
@@ -474,6 +485,42 @@ class User extends BaseModel
 
         return $behaviors;
     }
+
+    //调整用户等级
+    public function modConsumeType()
+    {
+        //当前用户等级
+        $current_consume_type = $this->getAttribute('consume_type');
+        //累计消费金额
+        $consum_money = $this->getAttribute('consum_money');
+        $fields_consume_type = self::getPropInfo('fields_consume_type');
+        for($i=count($fields_consume_type)-1;$i>0;$i--){
+            //条件金额
+            $cond_money = empty($fields_consume_type[$i]['con'])?[]:$fields_consume_type[$i]['con'];
+            if(count($cond_money)==2){
+                if($i>$current_consume_type && $cond_money[0]<=$consum_money && $cond_money[1]>$consum_money){
+                    //直接调整用户等级
+                    $this->consume_type = $i;
+                    $this->save(false);
+                    break;
+                }
+            }elseif (count($cond_money)==1){
+                if($i>$current_consume_type && $cond_money[0]<$consum_money){
+                    //直接调整用户等级
+                    $this->consume_type = $i;
+                    $this->save(false);
+                    break;
+                }
+            }else{
+                break;
+            }
+        }
+
+
+
+    }
+
+
 
     public function rules()
     {

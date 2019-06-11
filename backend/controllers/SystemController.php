@@ -4,7 +4,7 @@ namespace backend\controllers;
 
 class SystemController extends CommonController
 {
-
+    public $enableCsrfValidation=false;
 
     public function actionIndex()
     {
@@ -306,5 +306,76 @@ class SystemController extends CommonController
         $model = new \common\models\SysNavPage();
         $result = $model->actionDel(['id'=>$id]);
         return $this->asJson($result);
+    }
+
+    //微信设置
+    public function actionWechat()
+    {
+        $setting_key = 'wechat_menu';
+        //微信
+        $wx_object = \Yii::createObject(\Yii::$app->components['wechat']);
+
+        if($this->request->isAjax || $this->request->isPost){
+            //
+            $menu = $this->request->post('menu');
+            $menu = json_decode($menu,true);
+            if(isset($menu['menu'])){
+                try{
+                    //调整菜单栏
+                    $button = isset($menu['menu']['button'])?$menu['menu']['button']:[];
+                    //保存本地数据库
+                    $arr = [];
+
+                    foreach($button as $vo) {
+                        if($vo){
+                            $sub_button = [];
+                            foreach ($vo['sub_button'] as $item){
+                                if(!empty($item['type']) && $item['type']=='view_limited'){
+                                    if(empty($item['key'])) throw new \yii\base\UserException(200,'请选择图文内容');
+                                    $item['media_id'] = substr($item['key'],4);
+                                }elseif (!empty($item['type']) && $item['type']=='text'){
+                                    $item['type']='click';
+                                }
+
+                                if(!empty($item)){
+                                    $sub_button[] = $item;
+                                }
+                            }
+                            $vo['sub_button']=$sub_button;
+                            if(!empty($vo['type']) && $vo['type']=='view_limited'){
+                                if(empty($item['key'])) throw new \yii\base\UserException(200,'请选择图文内容');
+                                $vo['media_id'] = substr($vo['key'],4);
+                            }elseif (!empty($vo['type']) && $vo['type']=='text'){
+                                $vo['type']='click';
+                            }
+                            $arr[] = $vo;
+                        }
+
+                    }
+//                var_dump(json_encode($arr));exit;
+
+                    $state = $wx_object->menu($arr);
+                    //直接入库
+                    \common\models\SysSetting::setContent($setting_key,json_encode($arr));
+
+                    return $this->asJson(['code'=>(int)$state,'msg'=>$state?'操作成功':'操作异常']);
+                }catch (\Exception $e) {
+                    return $this->asJson(['code'=>0,'msg'=>'操作异常:'.$e->getMessage().':'.$e->getLine()]);
+                }
+            }
+            return $this->asJson(['code'=>0,'msg'=>'参数异常']);
+        }
+        //获取图文素材
+        $material = $wx_object->getMaterial();
+        $material = isset($material['item'])?$material['item']:[];
+//        dump($material);exit;
+        //按钮信息
+        $var_menu = \common\models\SysSetting::getContent($setting_key);
+        $var_menu = $var_menu?json_decode($var_menu,true):[];
+
+        return $this->render('wechat',[
+            'var_menu' => $var_menu,
+            'material' => $material,
+        ]);
     }
 }

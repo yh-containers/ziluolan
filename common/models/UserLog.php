@@ -15,6 +15,9 @@ class UserLog extends BaseModel
         ['name'=>'金康豆换金豆',],
         ['name'=>'金豆赠送','field'=>'wallet'],
         ['name'=>'提现','field'=>'wallet'],
+        ['name'=>'消费豆消费','field'=>'wallet'],
+        ['name'=>'消费豆退还','field'=>'wallet'],
+        ['name'=>'提现被拒','field'=>'wallet'],
     ];
 
     public static $fields_origin_type = [

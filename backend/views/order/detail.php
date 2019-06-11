@@ -37,8 +37,10 @@ $this->params=[
                     <td><?=$model['no']?></td>
                     <td>用户名</td>
                     <td><?=$model['linkUser']['username']?></td>
+                    <td>所属门店</td>
+                    <td class="text-green"><?=$model['linkStore']['name']?></td>
                     <td>状态</td>
-                    <td colspan="3">
+                    <td>
                         <span class="btn btn-success <?=empty($model)?'': $model->getStepFlowInfo($model['step_flow'],'field',null)?> <?=\common\models\Order::getPropInfo('fields_status',$model['status'],'style')?>">
                             <?=empty($model)?:$model->getStepFlowInfo($model['step_flow'])?>
                         </span>

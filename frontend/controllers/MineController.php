@@ -388,8 +388,8 @@ class MineController extends CommonController
         }
 
 
-        $bank_query = \common\models\UserBankCard::find();
-        if(!empty($bank_id)) $bank_query = $bank_query->where(['id'=>$bank_id]);
+        $bank_query = \common\models\UserBankCard::find()->where(['uid'=>$this->user_id]);
+        if(!empty($bank_id)) $bank_query = $bank_query->andWhere(['id'=>$bank_id]);
         $model_bank = $bank_query->orderBy('id desc')->one();
 
 

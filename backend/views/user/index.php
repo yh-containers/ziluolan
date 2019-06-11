@@ -12,7 +12,45 @@ $this->params=[
 
 <div class="box">
     <div class="box-header with-border">
+        <div class="col-sm-7">
+            <div class="btn-group margin-r-5">
+                <a type="button" href="<?=\yii\helpers\Url::to([''])?>" class="btn <?= ''==$consume_type?'btn-primary':'btn-default'?> ">全部</a>
+                <?php foreach(\common\models\User::getPropInfo('fields_consume_type') as $key=>$vo){?>
 
+                <a type="button" href="<?=\yii\helpers\Url::to(['','consume_type'=>$key])?>" class="btn <?=is_numeric($consume_type)&&$key==$consume_type?'btn-primary':'btn-default'?>"><?=empty($vo['name'])?'无消费等级':$vo['name']?></a>
+                <?php }?>
+            </div>
+
+        </div>
+
+        <div class="col-sm-5 no-padding">
+            <form>
+            <div class="col-sm-3">
+                <select class="form-control" name="team_wallet">
+                    <option value="" <?=empty($team_wallet)?'selected':''?> >团队提成</option>
+                    <option value="1" <?=$team_wallet==1?'selected':''?> >大于0</option>
+                    <option value="2" <?=$team_wallet==2?'selected':''?> >大于0小于1000</option>
+                    <option value="3" <?=$team_wallet==3?'selected':''?> >大于1000小于10000</option>
+                    <option value="4" <?=$team_wallet==4?'selected':''?> >大于10000</option>
+
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <select class="form-control" name="admin_id">
+                    <option value="">请选择所属门店</option>
+                    <?php foreach($store as $vo) {?>
+                        <option value="<?=$vo['id']?>" <?=$admin_id==$vo['id']?'selected':''?>><?=$vo['name']?></option>
+                    <?php }?>
+                </select>
+            </div>
+            <div class="input-group col-sm-5">
+                <input type="text" class="form-control" name="keyword" value="<?=$keyword?>" placeholder="会员号/微信名称">
+                <span class="input-group-btn">
+                  <button type="submit"  class="btn btn-info btn-flat">搜索</button>
+                </span>
+            </div>
+            </form>
+        </div>
     </div>
     <!-- /.box-header -->
     <div class="box-body">
@@ -23,7 +61,6 @@ $this->params=[
                 <th width="80">会员号</th>
                 <th width="100">微信名称</th>
                 <th width="80">等级</th>
-
                 <th width="120">所属门店</th>
                 <th width="120">推荐人</th>
                 <th width="100">健康豆</th>
@@ -36,7 +73,7 @@ $this->params=[
             </thead>
             <tbody>
             <?php foreach($list as $vo){ ?>
-                <tr <?= !$vo['open_id']?'style="color: #C11A1A"':'' ?> >
+                <tr>
                     <th><?=$vo['id']?></th>
                     <th><?=$vo['number']?></th>
                     <th><?=$vo['username']?></th>
@@ -52,7 +89,7 @@ $this->params=[
                         <a href="<?=\yii\helpers\Url::to(['detail','id'=>$vo['id']])?>" class="btn btn-xs btn-default">详细</a>
                         <a href="<?=\yii\helpers\Url::to(['add','id'=>$vo['id']])?>" class="btn btn-xs btn-warning">编辑</a>
                         <a href="<?=\yii\helpers\Url::to(['order/index','user_id'=>$vo['id']])?>" class="btn btn-xs btn-primary">订单(<?=empty($vo['linkOrderCount'])?0:$vo['linkOrderCount']['order_num']?>)</a>
-                        <a href="<?=\yii\helpers\Url::to(['finance/index','id'=>$vo['id']])?>" class="btn btn-xs btn-info">流水</a>
+                        <a href="<?=\yii\helpers\Url::to(['flow','uid'=>$vo['id']])?>" class="btn btn-xs btn-info">流水</a>
                         <a href="<?=\yii\helpers\Url::to(['del','id'=>$vo['id']])?>" class="btn btn-xs btn-danger">删除</a>
                     </th>
                 </tr>

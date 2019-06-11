@@ -10,7 +10,7 @@ class GoodsController extends CommonController
         //商品栏目
         $n_id = $this->request->get('n_id',0);
         //商品分类
-        $model_cate = \common\models\SysNavPage::find()->where(['status'=>1,'type'=>2])->all();
+        $model_cate = \common\models\SysNavPage::find()->where(['status'=>1,'type'=>2])->andWhere(['>','pid',0])->all();
 
         return $this->render('cate',[
             'n_id' => $n_id,

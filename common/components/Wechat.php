@@ -100,6 +100,27 @@ class Wechat extends BaseObject
     }
 
 
+    /*
+     * 菜单栏
+     * */
+    public function menu($button = [])
+    {
+        $url = 'https://api.weixin.qq.com/cgi-bin/menu/create?access_token='.$this->getAccessToken();
+        $data = ['button'=>$button];
+//        dump($data);
+        $data = json_encode($data,JSON_UNESCAPED_UNICODE);
+        $result = \common\components\HttpCurl::req($url,$data,'POST',[
+            'Content-Type: application/x-www-form-urlencoded'
+        ],true);
+        $result = json_decode($result,true);
+//        var_dump($result);exit;
+        if($result && $result['errcode']>0){
+            return false;
+        }else{
+            return true;
+        }
+
+    }
     /**
      * 带参二维码
      * @param int $scene_id 场景id值
@@ -132,6 +153,28 @@ class Wechat extends BaseObject
         }
     }
 
+    /*
+     * 获取素材
+     * */
+    public function getMaterial($type = 'news',$offset=0,$count = 10)
+    {
+        $url = 'https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token='.$this->getAccessToken();
+        $data = [
+            "type" => $type,
+            "offset"   => $offset,
+            "count"   => $count,
+        ];
+        $json = json_encode($data);
+        $result = \common\components\HttpCurl::req($url,$json,'POST',[
+            'Content-Type: application/x-www-form-urlencoded'
+        ],true);
+        $result = json_decode($result,true);
+        if(empty($result) || isset($result['errcode'])){
+            //异常
+            return false;
+        }
+        return $result;
+    }
 
 
     //发送模板消息
@@ -284,6 +327,9 @@ class Wechat extends BaseObject
             return $info;
         }
     }
+
+
+
 }
 
 require_once \Yii::getAlias('@vendor').'/wechat/lib/WxPay.Data.php';

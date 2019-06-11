@@ -53,6 +53,7 @@ $.common={
                 layer.msg(res.msg)
             },
             complete:function(res,a,f){
+                setTimeout(function(){layer.closeAll()},1000)
                 if(res.status===200){
                     var responseText = res.responseText
                     if(responseText[0]==='{'){
@@ -76,7 +77,6 @@ $.common={
 
 
                 }
-                setTimeout(function(){layer.closeAll()},1000)
 
                 //
 
