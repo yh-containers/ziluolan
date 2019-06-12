@@ -21,29 +21,33 @@ $this->params = [
                     <col width="190">
                 </colgroup>
                 <tbody>
-                <tr class="bg-gray">
-                    <td colspan="2">模式产品</td>
-                </tr>
-                <tr>
-                    <td>营业额(不含运费)</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>提成支出</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>固定奖支出</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>运费收入</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>平台利润</td>
-                    <td></td>
-                </tr>
+                    <tr class="bg-gray">
+                        <td colspan="2">模式产品</td>
+                    </tr>
+                    <tr>
+                        <td>营业额(不含运费)</td>
+                        <td><?=$spe_money?></td>
+                    </tr>
+                    <tr>
+                        <td>提成支出</td>
+                        <td>--</td>
+                    </tr>
+                    <tr>
+                        <td>固定奖支出</td>
+                        <td><?=$spe_fixed_money?></td>
+                    </tr>
+                    <tr>
+                        <td>团队奖支出</td>
+                        <td><?=$spe_group_money?></td>
+                    </tr>
+                    <tr>
+                        <td>运费收入</td>
+                        <td><?=$spe_freight_money?></td>
+                    </tr>
+                    <tr>
+                        <td>平台利润</td>
+                        <td><?=$spe_in_money?></td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -54,29 +58,33 @@ $this->params = [
                     <col width="250">
                 </colgroup>
                 <tbody>
-                <tr class="bg-gray">
-                    <td colspan="2">普通产品</td>
-                </tr>
-                <tr>
-                    <td>营业额(不含运费)</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>提成支出</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>固定奖支出</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>运费收入</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>平台利润</td>
-                    <td></td>
-                </tr>
+                    <tr class="bg-gray">
+                        <td colspan="2">普通产品</td>
+                    </tr>
+                    <tr>
+                        <td>营业额(不含运费)</td>
+                        <td><?=$money?></td>
+                    </tr>
+                    <tr>
+                        <td>提成支出</td>
+                        <td><?=$com_money?></td>
+                    </tr>
+                    <tr>
+                        <td>固定奖支出</td>
+                        <td>--</td>
+                    </tr>
+                    <tr>
+                        <td>团队奖支出</td>
+                        <td>--</td>
+                    </tr>
+                    <tr>
+                        <td>运费收入</td>
+                        <td><?=$freight_money?></td>
+                    </tr>
+                    <tr>
+                        <td>平台利润</td>
+                        <td><?=$in_money?></td>
+                    </tr>
                 </tbody>
             </table>
         </div>

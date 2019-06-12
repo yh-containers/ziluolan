@@ -11,5 +11,9 @@ class OrderGoods extends BaseModel
     }
 
 
+    public function getLinkOrder()
+    {
+        return $this->hasOne(Order::className(),['id'=>'oid']);
+    }
 
 }

@@ -145,6 +145,16 @@ class Order extends BaseModel
 //            $goods_ids[] = $id;
             $goods_sku_id[$sku_id] = $num;
         }
+
+        //验证是否有完成过订单流程-普通商品有折扣
+        $goods_per = 0;
+        if($user_model->checkOrderFlowComplete()){
+            $n_per = SysSetting::getContent('n_per');
+            is_numeric($n_per) && $n_per>0 && $goods_per = $n_per;
+        }
+
+
+
         //所有商品数据
         $goods_sku_ids = array_keys($goods_sku_id);
         //商品数据
@@ -177,12 +187,17 @@ class Order extends BaseModel
                 //商品信息
                 $goods_arr['goods_info'] = $vo['linkGoods'];
                 $goods_arr['buy_num'] = $goods_sku_id[$vo['id']];
+                $goods_arr['h_per'] = empty($vo['linkGoods']['mode'])?$goods_per:0; // 普通商品折扣优惠
+                $h_per_price = empty($goods_arr['h_per'])?0:$goods_arr['h_per']*$vo['price']; //优惠价
+                $h_per_price = empty($h_per_price) ? 0 : $h_per_price<=0.01?0.01:$h_per_price; //优惠价
+                $goods_arr['h_per_price'] = $h_per_price; // 普通商品折扣优惠
                 $goods_data[]=  $goods_arr;
             }
         }
         //计算金额相关数据
         $money = [
             'money' => 0.00 ,//总金额
+            'dis_money' => 0.00 ,//优惠金额
             'goods_money' => 0.00 ,//商品总金额
             'pay_money' => 0.00 ,//实际支付总金额
             'total_money_no_freight' => 0.00 ,//不含运费总额
@@ -190,15 +205,16 @@ class Order extends BaseModel
             'taxation_money' => 0.00 ,//税费总金额
         ];
         foreach ($goods_data as $vo){
-
+            $dis_price = $vo['price']*$vo['buy_num']*$vo['h_per']; // 折扣优惠金额
             $goods_price = $vo['price']*$vo['buy_num']; // 购买金额
             $freight_money = empty($vo['goods_info']['freight_money'])?0:$vo['goods_info']['freight_money']*$vo['buy_num']; // 运费金额
             $taxation_money = 0.00;////$vo['taxation_money']*$vo['buy_num']; // 税费金额
 
             $money['money'] += $goods_price+$freight_money+$taxation_money;
-            $money['total_money_no_freight'] += $goods_price+$taxation_money;
+            $money['dis_money'] += $dis_price;
+            $money['total_money_no_freight'] += $goods_price+$taxation_money-$dis_price;
             $money['goods_money'] += $goods_price;
-            $money['pay_money'] += $goods_price+$freight_money+$taxation_money;
+            $money['pay_money'] += $goods_price+$freight_money+$taxation_money-$dis_price;
             $money['freight_money'] += $freight_money;
             $money['taxation_money'] += $taxation_money;
         }
@@ -294,7 +310,7 @@ class Order extends BaseModel
         $model_order->inv_pear_dis_money = $inv_pear_dis_money;
 
         //优惠金额
-        $model_order->dis_money = $inv_pear_dis_money; //总优惠金额
+        $model_order->dis_money = $inv_pear_dis_money+$money['dis_money']; //总优惠金额
         $model_order->pay_money = $model_order->money-$model_order->dis_money; //实际支付金额
         $model_order->need_pay_money = $model_order->pay_money + $model_order->inv_pear_dis_money; //实际支付金额+消费豆需要金额
         $model_order->freight_money = !empty($money['freight_money'])?$money['freight_money']:0.00;
@@ -339,8 +355,11 @@ class Order extends BaseModel
                 $model_order_goods->g_mode = $vo['linkGoods']['mode'];//分佣模式
                 $model_order_goods->sku_id = $vo['id'];
                 $model_order_goods->price = $vo['price'];
-                $model_order_goods->pay_price = $vo['price']; //商品实际支付金额
+                $model_order_goods->h_per = $vo['h_per'];//折扣
+                $model_order_goods->pay_price = empty($vo['h_per_price'])?$vo['price']:$vo['h_per_price']; //商品实际支付金额
                 $model_order_goods->num = $vo['buy_num'];
+                $model_order_goods->pay_money = $model_order_goods->pay_price*$vo['buy_num'];//商品成交总价
+                $model_order_goods->freight_money = $vo['linkGoods']['freight_money'];//商品成交总价
                 $model_order_goods->name = $vo['linkGoods']['name'];
                 $model_order_goods->sku_name = $vo['sku_group_name'];
                 $model_order_goods->sku_attr = json_encode($vo['sku_group_info']);
@@ -806,7 +825,8 @@ class Order extends BaseModel
         $order_goods = $this->linkGoods;
 
 
-
+        //团队提成
+        $group_com_total_money = 0.00;
         //佣金信息
         $default_com_data = $fixed_com_data  = $recommend_com_data = [
             'money' => 0,
@@ -816,7 +836,7 @@ class Order extends BaseModel
 
         foreach ($order_goods as $vo) {
             $num = $vo['num'];
-            $total_money = $vo['pay_price'] * $vo['num'];//商品实际支付价格
+            $total_money = $vo['pay_money'];//商品实际支付价格
             $com_data = [
                 'money' => $vo['pay_price'],//商品实际支付价格
                 'total_money' => $total_money,
@@ -824,18 +844,20 @@ class Order extends BaseModel
                 'g_mode' => $vo['g_mode'],//商品模式
             ];
 
-            if($vo['g_mode']==1){
+            if($vo['g_mode']){
+                //增加团队奖
+                $group_com_total_money+=$total_money;
                 //固定
                 $fixed_com_data['num']  += $num;
                 $fixed_com_data['money'] += $total_money;
                 array_push($fixed_com_data['data'],$com_data);
 
-            }elseif($vo['g_mode']==2){
                //推荐奖
                 $recommend_com_data['num']  += $num;
                 $recommend_com_data['money'] += $total_money;
                 array_push($recommend_com_data['data'],$com_data);
             }else{
+
                 //普通模式
                 $default_com_data['num']  += $num;
                 $default_com_data['money'] += $total_money;
@@ -844,27 +866,32 @@ class Order extends BaseModel
         }
         //计算佣金
         $com_money = $group_money = [];
+        //提成总额
+//        $nor_money = $fix_money = $rec_money = 0.00;
         //普通商品默认提成
         if($default_com_data['money']>0){
+            $get_money = $default_com_data['money']*$direct_push_per;
             $com_money[$direct_user_id] = [
-                'money' => $default_com_data['money']*$direct_push_per, //所得佣金
-                'type'  => 0,
-                'data'  => array_merge(['sty'=>$direct_push_per],$default_com_data),
+                'money' => $get_money, //所得佣金
+                'data'  => [array_merge(['sty'=>$direct_push_per,'get_money'=>$get_money,'g_type'=>0],$default_com_data)],
             ];
         }
-
-        //固定模式
+        //模式奖励
         foreach ($fixed as $key=>$gd){
+            $get_money = $fixed_com_data['num']*$gd; //获得模式奖励
+
             if(isset($model_user_buy_link[$key]) && $fixed_com_data['num']>0){
                 $fixed_user_id = $model_user_buy_link[$key];
                 if(array_key_exists($fixed_user_id, $com_money)) {
-                    $com_money[$fixed_user_id]['money'] += $fixed_com_data['num']*$gd;
-                    array_push($com_money[$fixed_user_id]['data'],array_merge(['sty'=>$gd],$fixed_com_data));
+
+                    $com_money[$fixed_user_id]['money'] += $get_money;
+                    array_push($com_money[$fixed_user_id]['data'],array_merge(['sty'=>$gd,'get_money'=>$get_money,'g_type'=>1],$fixed_com_data));
+
+
                 }else{
                     $com_money[$fixed_user_id]=[
-                        'money'   => $fixed_com_data['num']*$gd,
-                        'type'    => 1,
-                        'data'    => array_merge(['sty'=>$gd],$fixed_com_data),
+                        'money'   => $get_money,
+                        'data'    => [array_merge(['sty'=>$gd,'get_money'=>$get_money,'g_type'=>1],$fixed_com_data)],
                     ];
                 }
 
@@ -873,17 +900,19 @@ class Order extends BaseModel
                 break;
             }
         }
+
         //推荐模式
         foreach ($recommend as $key=>$gd){
+            $get_money = $recommend_com_data['money']*$gd;//奖励金额
             if(isset($model_user_buy_link[$key]) && $recommend_com_data['money']>0){
                 $fixed_user_id = $model_user_buy_link[$key];
                 if(array_key_exists($fixed_user_id, $com_money)) {
-                    $com_money[$fixed_user_id]['money'] += $recommend_com_data['money']*$gd;
+                    $com_money[$fixed_user_id]['money'] += $get_money;
+                    array_push($com_money[$fixed_user_id]['data'],array_merge(['sty'=>$gd,'get_money'=>$get_money,'g_type'=>2],$recommend_com_data));
                 }else{
                     $com_money[$fixed_user_id]=[
-                        'money'   => $recommend_com_data['money']*$gd,
-                        'type'    => 2,
-                        'data'    => array_merge(['sty'=>$gd],$recommend_com_data),
+                        'money'   => $get_money,
+                        'data'    => [array_merge(['sty'=>$gd,'get_money'=>$get_money,'g_type'=>2],$recommend_com_data)],
                     ];
                 }
 
@@ -892,65 +921,67 @@ class Order extends BaseModel
                 break;
             }
         }
-
-        //团队模式
-        $rev_users = array_reverse($model_user_buy_link);
-        //获取团队贡献金额
-        $group_users = User::find()->asArray()->select('id,team_wallet_full')->where(['id'=>$model_user_buy_link])->all();
-        $group_users = array_column($group_users,null,'id');
-        //离我最近的几个用户拿提成
-        $link_user_top_money = [];
-        foreach ($rev_users  as $vo){
-            if(isset($group_users[$vo])){
-                $link_user_top_money[$group_users[$vo]['team_wallet_full']] =  $group_users[$vo];
+        //团队提成
+        if($group_com_total_money>0){
+            //团队模式
+            $rev_users = array_reverse($model_user_buy_link);
+            //获取团队贡献金额
+            $group_users = User::find()->asArray()->select('id,team_wallet_full')->where(['id'=>$model_user_buy_link])->all();
+            $group_users = array_column($group_users,null,'id');
+            //离我最近的几个用户拿提成
+            $link_user_top_money = [];
+            foreach ($rev_users  as $vo){
+                if(isset($group_users[$vo])){
+                    $link_user_top_money[$group_users[$vo]['team_wallet_full']] =  $group_users[$vo];
+                }
             }
-        }
-        krsort($link_user_top_money,SORT_NUMERIC);
+            krsort($link_user_top_money,SORT_NUMERIC);
 
-        //处理金额key
-        $link_user_top_money= array_values($link_user_top_money);
-        $group_record_current_index = false;
-        $group_record_all_per = []; //记录所有比例
-        $group_new_users = [];
-        foreach ($link_user_top_money as $vo){
-            list($group_award_index,$group_award_per,$is_over) = $this->_get_group_per($vo['team_wallet_full']);
-            if($group_award_index===false || $group_award_per<=0){
-                //直接结束 //没有达到标准 比例小于0、已处理过同比例的数据
-                break;
+            //处理金额key
+            $link_user_top_money= array_values($link_user_top_money);
+            $group_record_current_index = false;
+            $group_record_all_per = []; //记录所有比例
+            $group_new_users = [];
+            foreach ($link_user_top_money as $vo){
+                list($group_award_index,$group_award_per,$is_over) = $this->_get_group_per($vo['team_wallet_full']);
+                if($group_award_index===false || $group_award_per<=0){
+                    //直接结束 //没有达到标准 比例小于0、已处理过同比例的数据
+                    break;
+                }
+                //记录此次比例
+                // $group_record_current_index = $group_award_index;
+                // array_push($group_record_all_per,$group_award_per);
+                $vo['com_per_key'] = $group_award_index; //奖励索引
+                $vo['com_per'] = $group_award_per; //奖励索引
+                array_push($group_new_users, $vo);
+                //结束
+                if($is_over) break;
             }
-            //记录此次比例
-            // $group_record_current_index = $group_award_index;
-            // array_push($group_record_all_per,$group_award_per);
-            $vo['com_per_key'] = $group_award_index; //奖励索引
-            $vo['com_per'] = $group_award_per; //奖励索引
-            array_push($group_new_users, $vo);
-            //结束
-            if($is_over) break;
-        }
-//        var_dump($group_new_users);exit;
-        //重新计算提成人员--奖励信息
-        $group_new_users_com = array_values(array_column($group_new_users, null,'com_per_key'));
+    //        var_dump($group_new_users);exit;
+            //重新计算提成人员--奖励信息
+            $group_new_users_com = array_values(array_column($group_new_users, null,'com_per_key'));
 
-        foreach ($group_new_users_com as $vo) {
-            array_push($group_record_all_per,$vo['com_per']);
-        }
-        //最终团队比例
-        $group_per = [];
-        //计算比例
-        !empty($group_record_all_per) && $group_per = $this->_handle_team_per($group_record_all_per);
-        //处理提成
-        foreach ($group_new_users_com as $key=>$lgm){
-
-            if(isset($group_per[$key])){
-                $per = $group_per[$key];
-                $group_money[$lgm['id']]=[
-                    'money'   => $this->need_pay_money*$per,
-                    'data'    => array_merge(['sty'=>$per,'com_money'=>$this->need_pay_money],$lgm),
-                ];
-            }else{
-                break;
+            foreach ($group_new_users_com as $vo) {
+                array_push($group_record_all_per,$vo['com_per']);
             }
+            //最终团队比例
+            $group_per = [];
+            //计算比例
+            !empty($group_record_all_per) && $group_per = $this->_handle_team_per($group_record_all_per);
+            //处理提成
+            foreach ($group_new_users_com as $key=>$lgm){
 
+                if(isset($group_per[$key])){
+                    $per = $group_per[$key];
+                    $group_money[$lgm['id']]=[
+                        'money'   => $group_com_total_money*$per,
+                        'data'    => array_merge(['sty'=>$per,'com_money'=>$group_com_total_money],$lgm),
+                    ];
+                }else{
+                    break;
+                }
+
+            }
         }
 
         return [$com_money,$group_money];

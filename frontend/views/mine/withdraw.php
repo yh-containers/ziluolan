@@ -8,9 +8,9 @@ $this->params = [
 
 <style>
     body {background-color: #fff;}
-    .posF {display: none;position: fixed; top: 0;left: 0; width: 100%;height: 100%; z-index: 5;} 
-    .posF .bg {background: #000 none repeat scroll 0 0; height: 100%; left: 0; opacity: 0.35; position: absolute; top: 0; width: 100%; z-index: -1; } 
-    .posF .box500 {background: #fff none repeat scroll 0 0; border-radius: 6px; margin: 30% auto 0; width: 84%; } 
+    .posF {display: none;position: fixed; top: 0;left: 0; width: 100%;height: 100%;margin: 0px; z-index: 5;} 
+    .posF .bg {background: #000; height: 100%; left: 0; opacity: 0.35; position: absolute; top: 0; width: 100%; z-index: -1; } 
+    .posF .box500 {background: #fff; border-radius: 6px; margin: 0px; width: 300px;height: 300px;position: fixed;left: 0px;right: 0px;top: 0px;bottom: 0px;margin: auto; } 
     .posF .box500 .hd {border-bottom: 1px solid #dfdfdf; position: relative;padding: 7px 20px; } 
     .posF .box500 .hd p {color: #353535; font-size: 1rem; line-height: 30px;float: left;} 
     .posF .box500 .hd .off {float: right;width: 30px;height: 30px;border-radius: 30px;background: url("<?=\Yii::getAlias('@assets')?>/images/guanbi.png") no-repeat right center;background-size: 21px;} 
@@ -128,6 +128,10 @@ $this->params = [
 <?php $this->beginBlock('script')?>
 <script>
 $(function(){
+    $("form").submit(function(){
+        //这里是要执行的代码
+        event.preventDefault();
+    });
     $(".charge").click(function () {
         var open_node = '#'+$(this).data('node')
         $(open_node).show()
@@ -153,6 +157,8 @@ function g_fh_offs(_this){
 function t_fh_offs(_this){
     $(".posF").hide();
 }
+
+
 </script>
 <?php $this->endBlock()?>
 

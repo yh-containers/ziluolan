@@ -46,6 +46,9 @@ $this->params=[
                 </div>
             </form>
         </div>
+        <div class="col-sm-2">
+            <a href="<?=\yii\helpers\Url::to(array_merge(['export-excel'],\Yii::$app->request->get()))?>"  class="btn btn-info btn-flat">导出</a>
+        </div>
     </div>
     <!-- /.box-header -->
     <div class="box-body">

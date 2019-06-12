@@ -83,6 +83,8 @@ class SystemController extends CommonController
     {
         $normal_content = \common\models\SysSetting::getContent('normal');
         $normal_content = json_decode($normal_content,true);
+        //普通商品
+        $n_per = \common\models\SysSetting::getContent('n_per');
         //固定金额
         $fixed = \common\models\SysSetting::getContent('fixed');
         $fixed = explode(',', $fixed);
@@ -93,6 +95,7 @@ class SystemController extends CommonController
         $group_award = \common\models\SysSetting::getContent('group_award');
         $group_award = explode(',', $group_award);
         return $this->render('setting',[
+            'n_per'  => $n_per,
             'normal_content'  => $normal_content,
             'fixed'  => $fixed,
             'recommend'  => $recommend,

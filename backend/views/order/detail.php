@@ -166,6 +166,8 @@ $this->params=[
                     <th width="200">商品sku组合名</th>
                     <th width="120">商品价格</th>
                     <th width="80">购买数量</th>
+                    <th width="80">支付单价</th>
+                    <th width="80">支付金额</th>
                     <th width="80">提成模式</th>
                 </tr>
                 </thead>
@@ -177,6 +179,8 @@ $this->params=[
                         <td><?=$vo['sku_name']?></td>
                         <td><?=$vo['price']?></td>
                         <td><?=$vo['num']?></td>
+                        <td><?=$vo['pay_price']?></td>
+                        <td><?=$vo['pay_money']?></td>
                         <td><?=\common\models\Goods::getPropInfo('fields_mode',$vo['g_mode'],'name')?></td>
                     </tr>
                 <?php }?>

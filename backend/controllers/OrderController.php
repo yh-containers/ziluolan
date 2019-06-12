@@ -137,4 +137,69 @@ class OrderController extends CommonController
     }
 
 
+
+    //导出excel
+    public function actionExportExcel()
+    {
+        $user_id = $this->request->get('user_id');
+        $pay_way = $this->request->get('pay_way');
+        $admin_id = $this->request->get('admin_id');
+        $time_start = $this->request->get('time_start');
+        $time_end = $this->request->get('time_end');
+        $keyword = $this->request->get('keyword');
+        $keyword = trim($keyword);
+
+
+        //会员模型
+        $query = \common\models\Order::find();
+        //是否是门店管理员
+        if($this->is_store_manager_id!==false){
+            $query = $query->andWhere(['admin_id'=>$this->is_store_manager_id]);
+        }
+
+        !empty($user_id) &&  $query = $query->andWhere(['uid'=>$user_id]);
+        !empty($admin_id) &&  $query = $query->andWhere(['admin_id'=>$admin_id]);
+        $pay_way!='' && is_numeric($pay_way) &&  $query = $query->andWhere(['pay_way'=>$pay_way]);
+        !empty($keyword) && $query= $query->andWhere(['like','no',$keyword]);
+        //按时间查询
+        if(!empty($time_end) && !empty($time_start) && $time_end>=$time_start){
+            $query = $query->andWhere(['and',['>=','create_time',strtotime($time_start)],['<=','create_time',strtotime($time_end)+86400]]);
+
+        }elseif (!empty($time_start)){
+            $query = $query->andWhere(['>=','create_time',strtotime($time_start)]);
+
+        }elseif (!empty($time_end)){
+            $query = $query->andWhere(['<=','create_time',strtotime($time_end)]);
+        }
+
+        $query = $query
+            ->with(['linkUser','linkStore'])
+            ->orderBy("id desc");
+
+        $data = [
+            ['创建时间','订单号','会员名','会员号','所属门店','订单金额','支付金额','支付方式','发票类型','需求留言','状态'],
+        ];
+        foreach ($query->batch() as $orders){
+            foreach ($orders as $item){
+                array_push($data,[
+                    $item['create_time']?date('Y-m-d H:i:s',$item['create_time']):'',
+                    $item['no'],
+                    $item['linkUser']['username'],
+                    $item['linkUser']['number'],
+                    $item['linkStore']['name'],
+                    $item['money'],
+                    $item['pay_money'],
+                    !is_null($item['pay_way'])?\common\models\Order::getPropInfo('fields_pay_way',$item['pay_way'],'name'):'',
+                    \common\models\Order::getPropInfo('fields_invoice',$item['invoice_type'],'name'),
+                    $item['remark'],
+                    $item->getStepFlowInfo($item['step_flow']),
+                ]);
+            }
+        }
+
+        \backend\components\ExportExcel::handleData($data,'订单信息');
+        return $this->render('');
+
+    }
+
 }

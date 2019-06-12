@@ -64,24 +64,14 @@ $this->params = [
                         <div class="content fl">
                             <p class="title"><a href="javascript:;"><?=$vo['name']?></a></p>
                             <p class="date"><?=$vo['sku_name']?></p>
-                            <p class="price">¥ <?=$vo['price']?> X <?=$vo['num']?> </p>
+                            <p class="price">¥ <?=$vo['pay_price']?> X <?=$vo['num']?> </p>
                         </div>
                     </div>
                 </li>
             <?php }?>
         </ul>
     </div>
-    <?php if(!empty($model['linkLogistics'])){?>
-    <div class="orders_det_mode">
-        <div class="label">物流信息</div>
-        <div class="row">
-            
-            <!--物流-->
-            <p>快递名称：<?=$model['linkLogistics']['company']?></p>
-            <p>快递单号：<?=$model['linkLogistics']['no']?></p>            
-        </div>
-    </div>
-    <?php }?>
+
     <div class="orders_det_mode">
         <div class="row">
             <p>订单编号：<?=$model['no']?></p>
@@ -100,7 +90,7 @@ $this->params = [
                     foreach ($invoice_data as $vo){
                         if(isset($vo['name']) && isset($vo['value'])){
             ?>
-                <p><?=$vo['name']?>:<?=$vo['value']?></p>
+                <p><?=$vo['name']?>：<?=$vo['value']?></p>
             <?php } } ?>
             <p>订单金额<?=$model['rec_mode']?'(含运费)':''?>：<span style="color: red">￥<?= $model['money'] ?> </span></p>
             <?php if($model['use_inv_pear']>0){?>

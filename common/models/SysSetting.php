@@ -7,7 +7,7 @@ class SysSetting extends BaseModel
 
     //团队奖励提成
     public static $_GROUP_AWARD = [
-        ['cond'=>[0.0001,10],'show_cond'=>[1,10]],
+        ['cond'=>[1,10],'show_cond'=>[1,10]],
         ['cond'=>[10,100]],
         ['cond'=>[100,200]],
         ['cond'=>[200,500]],

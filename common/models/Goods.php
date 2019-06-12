@@ -10,8 +10,8 @@ class Goods extends BaseModel
 
     public static $fields_mode = [
         ['name'=>'普通商品'],
-        ['name'=>'固定奖'],
-        ['name'=>'推荐奖'],
+        ['name'=>'模式奖励'],
+//        ['name'=>'推荐奖'],
 //        ['name'=>'团队奖'],
     ];
 

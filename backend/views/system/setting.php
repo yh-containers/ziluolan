@@ -138,6 +138,32 @@ $this->params = [
     <div class="col-sm-6" >
         <div class="box box-info">
             <div class="box-header with-border">
+                <h3 class="box-title">普通商品</h3>
+            </div>
+            <form class="form-horizontal" action="<?= \yii\helpers\Url::to(['setting-save'])?>"  id="fixed-form">
+                <input name="<?=\Yii::$app->request->csrfParam?>" type="hidden"  value="<?= Yii::$app->request->csrfToken ?>">
+                <input type="hidden" name="type"  value="n_per" />
+                <div class="box-body">
+
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">非第一次购买折扣：</label>
+                        <div class="col-md-10">
+                            <input type="number" class="form-control" value="<?=isset($n_per)?$n_per:'0'?>" name="content">
+                        </div>
+                    </div>
+
+
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="hidden" name="lang" value="1">
+                            <input type="button" class="btn btn-block btn-primary btn-flat" value=" 提交 "  id="submit"  onclick="$.common.formSubmit($('#fixed-form'),1)"/>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="box box-info">
+            <div class="box-header with-border">
                 <h3 class="box-title">固定奖</h3>
             </div>
             <form class="form-horizontal" action="<?= \yii\helpers\Url::to(['setting-save'])?>"  id="fixed-form">

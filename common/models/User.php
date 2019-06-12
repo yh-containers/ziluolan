@@ -291,6 +291,12 @@ class User extends BaseModel
             self::updateAllCounters(['team_wallet_full'=>$number],['id'=>$group_user]);
         }
     }
+    //验证是否有完成的下单流程
+    public function checkOrderFlowComplete()
+    {
+        $order_model = Order::find(false)->where(['uid'=>$this->id,'step_flow'=>3,'status'=>3])->limit(1)->one();
+        return empty($order_model)?false:true;
+    }
 
     /**
      * 健康豆换金豆
@@ -302,6 +308,10 @@ class User extends BaseModel
         $deposit_money = $this->getAttribute('deposit_money');
         if ( $number<=0 || !is_numeric($number) ) throw new \Exception('兑换数量只能为正实数');
         if ( $deposit_money < $number ) throw new \Exception('健康豆不足');
+        //检测用户是否有订单
+
+        if(!$this->checkOrderFlowComplete())  throw new \Exception('有订单完成交易才能进行兑换');
+        
         //兑换数量
         $change_number = self::DEPOSIT_2_WALLET_PER*$number;
 
