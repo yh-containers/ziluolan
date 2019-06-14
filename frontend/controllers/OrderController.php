@@ -97,7 +97,7 @@ class OrderController extends CommonController
     {
         $id = $this->request->get('id');
 
-        $model = \common\models\Order::find()->with(['linkAddr','linkGoods','linkLogistics'])->where(['id'=>$id])->one();
+        $model = \common\models\Order::find()->with(['linkAddr','linkGoods','linkLogistics'])->where(['uid'=>$this->user_id,'id'=>$id])->one();
         return $this->render('detail',[
             'model' => $model,
             'handle' => empty($model)?[]:$model->getUserHandleAction(),

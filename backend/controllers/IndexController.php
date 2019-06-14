@@ -132,6 +132,84 @@ class IndexController extends CommonController
 
     }
 
+    private function _tree($array, $pid)
+    {
+        $tree = array();
+        foreach ($array as $key => $value) {
+            if ($value['pid'] == $pid) {
+                $value['linkNode'] = $this->_tree($array, $value['id']);
+                $tree[] = $value;
+            }
+        }
+        return $tree;
+    }
+    function generateTree($array){
+        //第一步 构造数据
+        $items = array();
+        foreach($array as $value){
+            $value['link'] = [$value['id']];
+            $items[$value['id']] = $value;
+
+        }
+        //第二部 遍历数据 生成树状结构
+        $tree = array();
+        $link = [];
+        foreach($items as $key => $value){
+            if(isset($items[$value['pid']])){
+                $items[$key]['link'] = array_merge($value['link'],$items[$value['pid']]['link']);
+                $link[$value['id']] = $items[$key]['link'];
+//                if(isset($node[$value['id']))
+
+                $items[$value['pid']]['son'][] = &$items[$key];
+
+
+
+//                if(isset($items[$value['pid']]['link'])){
+//                    array_unshift($items[$value['pid']]['link'],$value['id']);
+//                }else{
+//                    $items[$value['pid']]['link'][]=$value['id'];
+//                }
+            }else{
+                $tree[] = &$items[$key];
+            }
+        }
+        return [$tree,$link];
+    }
+
+    function handleLink($array)
+    {
+//        foreach ($array)
+    }
+
+
+
+    /*
+     * 查询队伍链
+     * */
+    private function _userLink($is_flush=false)
+    {
+        $cache = \Yii::$app->cache;
+        $cache_name = 'index_user_link';
+        $link = $cache->get($cache_name);
+        if(empty($link) || $is_flush){
+            $master_query = self::oldDbLink()->createCommand('select id,tuijian_id as pid from member where id>0 order by id asc  ')->queryAll();
+
+            list($data,$link) = $this->generateTree($master_query);
+
+            foreach ($link as $key=>&$vo){
+                $end = end($vo);
+                if(isset($link[$end])){
+                    $link[$key] =  array_unique(array_merge($link[$key],$link[$end]));
+                }
+            }
+            $cache->set($cache_name,$link,60);
+        }
+
+
+        return $link;
+    }
+
+
 /*
  * CREATE TABLE `member` (
   `mobile` varchar(20) DEFAULT NULL COMMENT '手机号码',
@@ -143,14 +221,21 @@ class IndexController extends CommonController
     {
 //        echo '同步数据开始<br/>';
 //        echo '-----同步用户数据--------<br/>';
-        $old_user_query = self::oldDbLink()->createCommand('select * from member order by id asc limit :start,:end ');
-        $len=10;
+        $user_link = $this->_userLink();
+//        var_dump($user_link);exit;
+        $old_user_query = self::oldDbLink()->createCommand('select * from member where id>0 order by id  asc limit :start,:end ');
+        $len=500;
         $i=0;
         $insert_num = [];
         for(;;){
             $old_user_data = $old_user_query->bindValues([':start'=>$i*$len,':end'=>$len])->queryAll();
             $write_user_data = [];
             foreach ($old_user_data as $vo){
+                $fl_uid_all = null;
+                if(isset($user_link[$vo['id']])){
+                    array_shift($user_link[$vo['id']]);
+                    $fl_uid_all = implode(',',$user_link[$vo['id']]);
+                }
                 //新表需要录入的数据
                 array_push($write_user_data,[
                     'id'            =>$vo['id'],
@@ -161,13 +246,13 @@ class IndexController extends CommonController
                     'image'         =>$vo['image'],
                     'wechat_qrcode_img' =>null,     //微信分享二维码图片地址
                     'type'          =>$vo['type'],  //无用[del]
-                    'consume_type'  =>null,         //消费等级
+                    'consume_type'  =>0,         //消费等级
                     'admin_id'      => $vo['admin_id']?$vo['admin_id']:1,    //门店会员
                     'direct_id'     =>$vo['direct_id'], //直推用户id--目前没有用的字段[del]
                     'phone'         =>$vo['phone'],     //手机号码
                     'tuijian_id'    =>$vo['tuijian_id'],//推荐人id
                     'tuijian_type'  =>$vo['tuijian_type'],//0没设置过 1设置过推荐人[del]
-                    'fl_uid_all'    =>null,  // 队伍链【新增】
+                    'fl_uid_all'    =>$fl_uid_all,  // 队伍链【新增】
                     'team_wallet_full'  =>0,  // 团队提成【新增】
                     'team_wallet'   =>$vo['team_wallet'],  //团队提成团队个人提成
                     'consum_wallet' =>$vo['consum_wallet'], //消费豆
@@ -216,7 +301,7 @@ class IndexController extends CommonController
             $line = \Yii::$app->db->createCommand()->batchInsert('zll_user',$i_fields,$write_user_data)->execute();
             array_push($insert_num,$line);
 
-//            if($i>3) break;
+//            if($i>1) break;
 
             $i+=1;
 
@@ -307,12 +392,16 @@ class IndexController extends CommonController
      * */
     public function actionSycOrderData()
     {
+        set_time_limit(0);
+
         $pay_way = ['WeChat'=>0,'offline'=>0,'wallet'=>0];
         //当前执行时间
         $current_time = time();
 
         $sql  = self::oldDbLink()->createCommand('select * from orderlist order by id asc limit :start,:end ');
-        $len=10;
+        $addr_sql = self::oldDbLink()->createCommand('select * from addres where id=:id ');
+        $goods_sql = self::oldDbLink()->createCommand('select * from cart where id in (:cart_id)');
+        $len=500;
         $i=0;
         $insert_num = [];
         $record_addr=[];
@@ -347,7 +436,7 @@ class IndexController extends CommonController
                     $status = 1;
                     $is_send = 0;
                     $send_start_time = $current_time;
-                }elseif ($vo['status']==2){
+                }elseif ($vo['state']==2){
                     $step_flow = 2;
                     $status = 1;
                     $is_send = 1;
@@ -355,7 +444,7 @@ class IndexController extends CommonController
                     $send_end_time = $vo['fahuo_time'];
 
                     $receive_start_time = $current_time;
-                }elseif ($vo['status']==3){
+                }elseif ($vo['state']==3){
                     $step_flow = 3;
                     $status = 3;
                     $is_send = 1;
@@ -370,12 +459,12 @@ class IndexController extends CommonController
 
                 //查询地址信息
                 if(!array_key_exists($vo['addres_id'],$record_addr)){
-                    $addre_info = self::oldDbLink()->createCommand('select * from addres where id=:id ')->bindValues([':id'=>$vo['addres_id']])->queryOne();
+                    $addre_info = $addr_sql->bindValues([':id'=>$vo['addres_id']])->queryOne();
                     $record_addr[$vo['addres_id']] = $addre_info;
                 }
 
                 //查询关联商品
-                $goods_info = self::oldDbLink()->createCommand('select * from cart where id in (:cart_id)')->bindValues([':cart_id'=>$vo['cart_id']])->queryAll();
+                $goods_info = $goods_sql->bindValues([':cart_id'=>$vo['cart_id']])->queryAll();
                 foreach ($goods_info as $gi){
                     array_push($write_goods_data,[
                         'oid'=>$vo['id'],
@@ -406,7 +495,7 @@ class IndexController extends CommonController
                     'taxation_money'    =>0,
                     'rec_mode'          =>$vo['tihuo_type']?0:1,
                     'invoice_type'      =>$vo['fapiao'],  //发票类型
-                    'is_back_pear'      =>0,//取消是否返回消费豆
+//                    'is_back_pear'      =>0,//取消是否返回消费豆
 
                     'step_flow'         =>$step_flow,
                     'status'            =>$status,

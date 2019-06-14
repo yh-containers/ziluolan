@@ -23,7 +23,7 @@ class FinanceController extends CommonController
                 'freight_money'=>'sum('.$prefix_order_goods.'freight_money*'.$prefix_order_goods.'num)',//商品运费
             ])
             ->joinWith(['linkGoods'],false,'right join')
-            ->where([$prefix_order.'step_flow'=>3,$prefix_order.'status'=>3])
+            ->where(['and',['>',$prefix_order.'step_flow',0],['not in',$prefix_order.'status',[0,2]]])
             ->groupBy($prefix_order_goods.'g_mode') //按商品佣金模式分组
             ->all();
         //获取消费日志

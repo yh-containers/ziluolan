@@ -188,7 +188,7 @@ class Order extends BaseModel
                 $goods_arr['goods_info'] = $vo['linkGoods'];
                 $goods_arr['buy_num'] = $goods_sku_id[$vo['id']];
                 $goods_arr['h_per'] = empty($vo['linkGoods']['mode'])?$goods_per:0; // 普通商品折扣优惠
-                $h_per_price = empty($goods_arr['h_per'])?0:$goods_arr['h_per']*$vo['price']; //优惠价
+                $h_per_price = empty($goods_arr['h_per'])?0:(1-$goods_arr['h_per'])*$vo['price']; //优惠价
                 $h_per_price = empty($h_per_price) ? 0 : $h_per_price<=0.01?0.01:$h_per_price; //优惠价
                 $goods_arr['h_per_price'] = $h_per_price; // 普通商品折扣优惠
                 $goods_data[]=  $goods_arr;
@@ -212,9 +212,10 @@ class Order extends BaseModel
 
             $money['money'] += $goods_price+$freight_money+$taxation_money;
             $money['dis_money'] += $dis_price;
-            $money['total_money_no_freight'] += $goods_price+$taxation_money-$dis_price;
+            $money['total_money_no_freight'] += $goods_price+$taxation_money;
             $money['goods_money'] += $goods_price;
             $money['pay_money'] += $goods_price+$freight_money+$taxation_money-$dis_price;
+            $money['pay_money_no_freight'] += $goods_price+$taxation_money-$dis_price; //不含运费跟优惠的价格
             $money['freight_money'] += $freight_money;
             $money['taxation_money'] += $taxation_money;
         }
@@ -343,6 +344,7 @@ class Order extends BaseModel
                 $model_order_addr->username=!empty($model_addr['username'])?$model_addr['username']:'';
                 $model_order_addr->addr=!empty($model_addr['addr'])?$model_addr['addr']:'';
                 $model_order_addr->addr_extra=!empty($model_addr['addr_extra'])?$model_addr['addr_extra']:'';
+                $model_order_addr->zip_code=!empty($model_addr['zip_code'])?$model_addr['zip_code']:null;
                 $model_order_addr->save(false);
             }
             
@@ -716,10 +718,10 @@ class Order extends BaseModel
                     if(!empty($model_user)){
                         //获得健康豆
                         $dep_money = intval($com_money_cal*self::COM_DES_PER*100)/100;
-                        $model_user->handleDepositMoney($dep_money,$model->getAttribute('id'),'用户消费获得健康豆:'.$dep_money,$vo,1);
+                        $model_user->handleDepositMoney($dep_money,$model->getAttribute('id'),'会员号:'.$model_user['number'].'消费获得健康豆:'.$dep_money,$vo,1);
                         //获得消费豆
                         $com_money = intval($com_money_cal*self::COM_CUS_PER*100)/100;
-                        $model_user->handleConsumWallet($com_money,$model->getAttribute('id'),'用户消费获得消费豆:'.$com_money,$vo,1);
+                        $model_user->handleConsumWallet($com_money,$model->getAttribute('id'),'会员号:'.$model_user['number'].'消费获得消费豆:'.$com_money,$vo,1);
                     }
 
                 }
@@ -731,14 +733,14 @@ class Order extends BaseModel
                     $model_user = User::findOne($uid);
                     $com_money_cal = empty($vo['money'])?0:$vo['money'];
                     //获得个人获得团队提成
-                    $model_user->handleTeamWallet($com_money_cal,$model->getAttribute('id'),'有用户消费获得团队提成增加:'.$com_money_cal,$vo,1);
+                    $model_user->handleTeamWallet($com_money_cal,$model->getAttribute('id'),'会员号:'.$model_user_buy['number'].'消费获得团队提成增加:'.$com_money_cal,$vo,1);
                     if(!empty($model_user)){
                         //获得健康豆
                         $dep_money = intval($com_money_cal*self::COM_DES_PER*100)/100;
-                        $model_user->handleDepositMoney($dep_money,$model->getAttribute('id'),'有用户消费获得团队奖励健康豆:'.$dep_money,$vo,1,1);
+                        $model_user->handleDepositMoney($dep_money,$model->getAttribute('id'),'会员号:'.$model_user_buy['number'].'消费'.'会员号:'.$model_user['number'].'获得团队奖励健康豆:'.$dep_money,$vo,1,1);
                         //获得消费豆
                         $com_money = intval($com_money_cal*self::COM_CUS_PER*100)/100;
-                        $model_user->handleConsumWallet($com_money,$model->getAttribute('id'),'有用户消费获得团队奖励消费豆:'.$com_money,$vo,1,1);
+                        $model_user->handleConsumWallet($com_money,$model->getAttribute('id'),'会员号:'.$model_user_buy['number'].'消费'.'会员号:'.$model_user['number'].'获得团队奖励消费豆:'.$com_money,$vo,1,1);
                     }
                 }
             }
@@ -804,7 +806,7 @@ class Order extends BaseModel
         //获取我的所有上级信息
         //队伍链
         $model_user_buy_link = $model_user_buy['fl_uid_all']?explode(',',$model_user_buy['fl_uid_all']):[];
-        // $model_user_buy_link = ['887','1463','4643','1297','2312','12','14','16','68','369','837'];
+//         $model_user_buy_link = ['887','1463','4643','1297','2312','12','14','16','68','369','837'];
         //直推用户id
         $direct_user_id = isset($model_user_buy_link[0])?$model_user_buy_link[0]:0;
         if(empty($direct_user_id)){
@@ -955,7 +957,7 @@ class Order extends BaseModel
                 $vo['com_per'] = $group_award_per; //奖励索引
                 array_push($group_new_users, $vo);
                 //结束
-                if($is_over) break;
+//                if($is_over) break;
             }
     //        var_dump($group_new_users);exit;
             //重新计算提成人员--奖励信息
@@ -966,8 +968,13 @@ class Order extends BaseModel
             }
             //最终团队比例
             $group_per = [];
+
+            if(isset($is_over) && $is_over===true){
+                $group_per[] = array_shift($group_record_all_per);
+            }
+
             //计算比例
-            !empty($group_record_all_per) && $group_per = $this->_handle_team_per($group_record_all_per);
+            !empty($group_record_all_per) && $group_per = array_merge($group_per,$this->_handle_team_per($group_record_all_per));
             //处理提成
             foreach ($group_new_users_com as $key=>$lgm){
 
@@ -1094,6 +1101,31 @@ class Order extends BaseModel
         return $per;
     }
 
+
+    /**
+     * 自动添加时间戳，序列化参数
+     * @return array
+     */
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        //订单处理日志
+        $behaviors[]=\common\components\OrderBehavior::className();
+
+        //开启软删除
+        $behaviors['softDeleteBehavior'] = [
+            'class' => \yii2tech\ar\softdelete\SoftDeleteBehavior::className(),
+            'softDeleteAttributeValues' => [
+                self::getSoftDeleteField() => time(),
+            ],
+            'replaceRegularDelete' => true // mutate native `delete()` method
+        ];
+        return $behaviors;
+    }
+
+
+
+
     //订单地址
     public function getLinkUser()
     {
@@ -1120,7 +1152,7 @@ class Order extends BaseModel
     //订单提成日志
     public function getLinkOrderComLog()
     {
-        return $this->hasMany(UserLog::className(),['cond'=>'id'])->where(['origin_type'=>1]);
+        return $this->hasMany(UserLog::className(),['cond'=>'id'])->where(['origin_type'=>1,'type'=>[1,2,3]]);
     }
 
     //订单门店

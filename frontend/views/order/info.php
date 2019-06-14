@@ -66,9 +66,9 @@ $this->params = [
                             <div class="pic fl"><a href="javascript:;"><img class="tran" src="<?=\common\models\Goods::getCoverImg($vo['linkGoods']['image'])?>"></a></div>
                             <div class="content fl">
                                 <div class="title"><a href="javascript:;"><?=$vo['linkGoods']['name']?>【<?=$vo['sku_group_name']?>】* <?=$vo['buy_num']?>份</a></div>
-                                <p class="price">单价:¥ <?=$vo['price']?>&nbsp;&nbsp; 总价:￥<?=$vo['price']*$vo['buy_num']?> </p>
+                                <p class="price">单价:¥ <?=$vo['price']?>&nbsp;&nbsp;总价:￥<?=$vo['price']*$vo['buy_num']?> </p>
                                 <?php if($vo['h_per']){?>
-                                <p class="quantity">折扣：<?=$vo['h_per']?>&nbsp;折后价:￥<?=$vo['h_per_price']?></p>
+                                <p class="quantity">折扣：<?=$vo['h_per']?>&nbsp;&nbsp;折后价:￥<?=$vo['h_per_price']?></p>
                                 <?php }?>
                                 <p class="quantity">数量：<?=$vo['buy_num']?></p>
                             </div>
@@ -141,7 +141,7 @@ $this->params = [
 <div class="footer-sub-order pro-footer clearfix">
     <div class="fl rmb">
         <span>需支付：</span>
-        <span class="span1" id="settle-money"  data-total_money="￥<?=$money['pay_money']?>(包含运费)" data-total_money_n_freight="￥<?=$money['total_money_no_freight']?>" >￥<?=$money['pay_money']?>(包含运费)</span>
+        <span class="span1" id="settle-money"  data-total_money="￥<?=$money['pay_money']?>(包含运费)" data-total_money_n_freight="￥<?=$money['pay_money_no_freight']?>" >￥<?=$money['pay_money']?>(包含运费)</span>
     </div>
     <div class="fr tjdd" id="tjdd"><a href="javascript:;" style="color:#fff;" id="submit">提交订单</a></div>
 </div>
